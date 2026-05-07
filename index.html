@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Metodos Pseudoaleatorios</title>
+  <meta name="description"
+    content="Simulador de 7 metodos pseudoaleatorios: Cuadrados Medios, Productos Medios, Multiplicador Constante, Congruencial Lineal, Multiplicativo, Aditivo y Cuadratico.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      background: #070710;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .inp {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: white;
+      width: 100%;
+      outline: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .inp:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, .18);
+    }
+
+    select.inp {
+      cursor: pointer;
+    }
+
+    .lbl {
+      font-size: 10.5px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .btn-gen {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      transition: all .2s;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, .3);
+    }
+
+    .btn-gen:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, .45);
+    }
+
+    .fam-nc {
+      background: rgba(99, 102, 241, .18);
+      color: #a5b4fc;
+    }
+
+    .fam-cg {
+      background: rgba(20, 184, 166, .18);
+      color: #5eead4;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    th {
+      padding: 9px 14px;
+      text-align: left;
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      border-bottom: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    td {
+      padding: 7px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, .04);
+    }
+
+    tbody tr {
+      transition: background .12s;
+      animation: rowIn .3s ease both;
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 255, 255, .025);
+    }
+
+    .cycle-tr {
+      background: rgba(239, 68, 68, .07) !important;
+      border-left: 2px solid #ef4444;
+    }
+
+    .hl-mid {
+      background: rgba(99, 102, 241, .35);
+      color: #c7d2fe;
+      font-weight: 700;
+      border-radius: 2px;
+      padding: 0 2px;
+    }
+
+    @keyframes rowIn {
+      from {
+        opacity: 0;
+        transform: translateY(-5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, .4);
+      border-radius: 2px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, .03);
+      border: 1px solid rgba(255, 255, 255, .07);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .formula-box {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen text-gray-100">
+
+  <!-- HEADER -->
+  <header style="background:rgba(7,7,16,.9);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.06);"
+    class="sticky top-0 z-50">
+    <div class="max-w-screen-xl mx-auto px-6 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+          style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+          <i class="fas fa-dice text-white text-sm"></i>
+        </div>
+        <div>
+          <div class="text-sm font-semibold text-white">Simulador de Metodos Pseudoaleatorios</div>
+          <div class="text-xs text-gray-500">Tecnica de Simulacion</div>
+        </div>
+      </div>
+      <div class="hidden sm:flex gap-2">
+        <span class="badge fam-nc">No Congruenciales</span>
+        <span class="badge fam-cg">Congruenciales</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-screen-xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+
+    <!-- ===== LEFT PANEL ===== -->
+    <aside class="lg:col-span-1 flex flex-col gap-4">
+
+      <!-- Method Selector -->
+      <div class="glass rounded-2xl p-5">
+        <label class="lbl" for="method-select">Metodo</label>
+        <select id="method-select" class="inp" onchange="onMethodChange()">
+          <optgroup label="No Congruenciales">
+            <option value="square">1. Cuadrados Medios</option>
+            <option value="product">2. Productos Medios</option>
+            <option value="constant">3. Multiplicador Constante</option>
+          </optgroup>
+          <optgroup label="Congruenciales">®
+            <option value="linear">4. Congruencial Lineal (Mixto)</option>
+            <option value="multiplicative">5. Congruencial Multiplicativo</option>
+            <option value="additive">6. Congruencial Aditivo</option>
+            <option value="quadratic">7. Congruencial No Lineal (Cuadratico)</option>
+          </optgroup>
+        </select>
+        <div class="mt-3 flex items-center gap-2">
+          <span id="fam-badge" class="badge fam-nc">No Congruencial</span>
+          <span id="fam-label" class="text-xs text-gray-500"></span>
+        </div>
+      </div>
+
+      <!-- Preset Examples -->
+      <div class="glass rounded-2xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="lbl" style="margin:0"><i class="fas fa-bookmark mr-1"></i>Ejemplos precargados</div>
+          <span id="preset-hint" class="text-xs text-gray-600">Haz clic para cargar</span>
+        </div>
+        <div id="preset-buttons" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- Load Exercises -->
+      <div class="glass rounded-2xl p-5">
+        <div class="flex items-center justify-between mb-3">
+          <div class="lbl" style="margin:0"><i class="fas fa-file-import mr-1"></i>Cargar ejercicios</div>
+          <button class="btn-gen text-sm py-2 px-3" onclick="document.getElementById('exercise-file-input').click()">
+            <i class="fas fa-file-arrow-up"></i> JSON
+          </button>
+        </div>
+        <input id="exercise-file-input" type="file" accept="application/json,.json" style="display:none" onchange="handleExerciseFile(event)">
+        <div id="exercise-summary" class="text-xs text-gray-400">No se ha cargado ningún JSON.</div>
+      
+      </div>
+
+      <!-- Parameters -->
+      <div class="glass rounded-2xl p-5">
+        <div class="lbl mb-3">Parametros</div>
+        <div id="dynamic-fields" class="flex flex-col gap-3"></div>
+        <div class="mt-3">
+          <label class="lbl" for="input-n">Iteraciones (n)</label>
+          <input id="input-n" type="number" value="20" min="1" max="1000" class="inp" placeholder="20">
+        </div>
+        <!-- Error box -->
+        <div id="error-box" class="hidden mt-3 rounded-lg px-4 py-3 text-xs text-red-400"
+          style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);">
+          <i class="fas fa-triangle-exclamation mr-1"></i><span id="error-text"></span>
+        </div>
+        <button class="btn-gen mt-4" onclick="generate()">
+          <i class="fas fa-play"></i> Generar
+        </button>
+      </div>
+
+      <!-- Formula Card -->
+      <div class="glass rounded-2xl p-5">
+        <div class="lbl mb-3">Formula del Metodo</div>
+        <div id="formula-box" class="formula-box"></div>
+        <ol id="algo-steps" class="flex flex-col gap-2 text-xs text-gray-400 list-none"></ol>
+      </div>
+
+    </aside>
+
+    <!-- ===== RIGHT PANEL ===== -->
+    <div class="lg:col-span-2 flex flex-col gap-4">
+
+      <!-- Stats -->
+      <div id="stats-row" class="hidden grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+
+      <!-- Results Table -->
+      <div class="glass rounded-2xl overflow-hidden">
+        <div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.06);"
+          class="flex items-center justify-between">
+          <div class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-widest">
+            <i class="fas fa-table-list text-gray-500"></i> Tabla de Resultados
+          </div>
+          <span id="table-badge" class="hidden text-xs font-mono px-3 py-1 rounded-full"
+            style="background:rgba(99,102,241,.15);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);"></span>
+        </div>
+        <div id="empty-state" class="py-14 text-center text-gray-600 text-sm">
+          <i class="fas fa-table text-3xl mb-3 block text-gray-700"></i>
+          Configura los parametros y presiona Generar
+        </div>
+        <div id="table-wrapper" class="hidden overflow-x-auto" style="max-height:340px;overflow-y:auto;">
+          <table>
+            <thead id="table-head"></thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Exercise Selection -->
+      <div class="glass rounded-2xl p-5">
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <i class="fas fa-list-check text-gray-500"></i> Ejercicios JSON
+        </div>
+        <div id="exercise-list" class="flex flex-col gap-2 text-sm text-white">
+          <div class="text-xs text-gray-500">Carga un archivo JSON para mostrar los ejercicios.</div>
+        </div>
+        <div id="exercise-detail" class="hidden mt-4 text-sm text-gray-200"></div>
+      </div>
+
+      <!-- Numbers Grid -->
+      <div id="numbers-section" class="hidden glass rounded-2xl p-5">
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+          <i class="fas fa-grid-2 text-gray-500"></i> Numeros Pseudoaleatorios Generados
+        </div>
+        <div id="numbers-grid" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- Scatter Chart -->
+      <div class="glass rounded-2xl p-5">
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <i class="fas fa-chart-scatter text-gray-500"></i> Diagrama de Uniformidad (r&#7522;, r&#7522;&#8330;&#8321;)
+        </div>
+        <div id="chart-empty" class="py-12 text-center text-gray-600 text-sm">
+          <i class="fas fa-chart-simple text-3xl mb-3 block text-gray-700"></i>
+          El grafico aparecera aqui despues de generar
+        </div>
+        <canvas id="scatter-chart" class="hidden" style="max-height:320px;"></canvas>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // =============================================================
+    // CONFIGURACION DE METODOS
+    // =============================================================
+    const METHODS = {
+      square: {
+        label: 'Cuadrados Medios', family: 'nc',
+        formula: 'X[i+1] = DigitosMedios( X[i]^2 )   |   r[i] = X[i] / 10^d',
+        steps: ['Elevar X[i] al cuadrado', 'Rellenar resultado a 2d digitos (ceros a la izq.)', 'Extraer los d digitos centrales -> X[i+1]', 'r[i] = X[i] / 10^d'],
+        fields: [
+          { id: 'seed0', label: 'Semilla X0', type: 'number', ph: '1234' },
+          { id: 'digits', label: 'Digitos (d)', type: 'select', opts: [2, 3, 4, 5, 6], def: 4 },
+        ],
+        presets: [
+          {name:'Ejemplo 1', n:10, seed0:'1234', digits:'4'},
+          {name:'Ejemplo 2', n:8,  seed0:'9803', digits:'4'},
+          {name:'Ejemplo 3', n:12, seed0:'576',  digits:'3'},
+        ]
+      },
+      product: {
+        label: 'Productos Medios', family: 'nc',
+        formula: 'X[i+1] = DigitosMedios( X[i] x X[i-1] )   |   r[i] = X[i] / 10^d',
+        steps: ['Multiplicar X[i] x X[i-1]', 'Rellenar producto a 2d digitos', 'Extraer los d digitos centrales -> X[i+1]', 'r[i] = X[i] / 10^d'],
+        fields: [
+          { id: 'seed0', label: 'Semilla X0', type: 'number', ph: '1234' },
+          { id: 'seed1', label: 'Semilla X1', type: 'number', ph: '5678' },
+          { id: 'digits', label: 'Digitos (d)', type: 'select', opts: [2, 3, 4, 5, 6], def: 4 },
+        ],
+        presets: [
+          {name:'Ejemplo 1', n:10, seed0:'1234', seed1:'5678', digits:'4'},
+          {name:'Ejemplo 2', n:8,  seed0:'2100', seed1:'1234', digits:'4'},
+          {name:'Ejemplo 3', n:10, seed0:'531',  seed1:'742',  digits:'3'},
+        ]
+      },
+      constant: {
+        label: 'Multiplicador Constante', family: 'nc',
+        formula: 'X[i+1] = DigitosMedios( k x X[i] )   |   r[i] = X[i] / 10^d',
+        steps: ['Multiplicar k x X[i]', 'Rellenar producto a 2d digitos', 'Extraer los d digitos centrales -> X[i+1]', 'r[i] = X[i] / 10^d'],
+        fields: [
+          { id: 'seed0', label: 'Semilla X0', type: 'number', ph: '1234' },
+          { id: 'constK', label: 'Constante k', type: 'number', ph: '4563' },
+          { id: 'digits', label: 'Digitos (d)', type: 'select', opts: [2, 3, 4, 5, 6], def: 4 },
+        ],
+        presets: [
+          {name:'Ejemplo 1', n:10, seed0:'1234', constK:'4563', digits:'4'},
+          {name:'Ejemplo 2', n:10, seed0:'5765', constK:'2173', digits:'4'},
+          {name:'Ejemplo 3', n:8,  seed0:'431',  constK:'211',  digits:'3'},
+        ]
+      },
+      linear: {
+        label: 'Congruencial Lineal (Mixto)', family: 'cg',
+        formula: 'X[n+1] = ( a * X[n] + c ) mod m   |   r[i] = X[i] / m',
+        steps: ['Calcular a * X[n] + c', 'Aplicar mod m -> X[n+1]', 'r[n] = X[n] / m'],
+        fields: [
+          { id: 'seed0', label: 'Semilla X0', type: 'number', ph: '27' },
+          { id: 'paramA', label: 'Multiplicador a', type: 'number', ph: '17' },
+          { id: 'paramC', label: 'Incremento c', type: 'number', ph: '43' },
+          { id: 'paramM', label: 'Modulo m', type: 'number', ph: '100' },
+        ],
+        presets: [
+          {name:'Ejemplo 1', n:15, seed0:'27',  paramA:'17', paramC:'43',  paramM:'100'},
+          {name:'Ejemplo 2', n:20, seed0:'7',   paramA:'5',  paramC:'3',   paramM:'8'},
+          {name:'IBM RANDU', n:20, seed0:'1',   paramA:'65539', paramC:'0', paramM:'2147483648'},
+        ]
+      },
+      multiplicative: {
+        label: 'Congruencial Multiplicativo', family: 'cg',
+        formula: 'X[n+1] = ( a * X[n] ) mod m   |   r[i] = X[i] / m',
+        steps: ['Calcular a * X[n]', 'Aplicar mod m -> X[n+1]', 'r[n] = X[n] / m'],
+        fields: [
+          { id: 'seed0', label: 'Semilla X0', type: 'number', ph: '27' },
+          { id: 'paramA', label: 'Multiplicador a', type: 'number', ph: '17' },
+          { id: 'paramM', label: 'Modulo m', type: 'number', ph: '100' },
+        ],
+        presets: [
+          {name:'Ejemplo 1', n:15, seed0:'7',   paramA:'11',  paramM:'16'},
+          {name:'Ejemplo 2', n:20, seed0:'3',   paramA:'5',   paramM:'11'},
+          {name:'Ejemplo 3', n:20, seed0:'27',  paramA:'17',  paramM:'100'},
+        ]
+      },
+      additive: {
+        label: 'Congruencial Aditivo', family: 'cg',
+        formula: 'X[n] = ( X[n-1] + X[n-k] ) mod m   |   r[i] = X[i] / m',
+        steps: ['Proporcionar k valores iniciales (k = longitud de la secuencia)', 'X[n] = (X[n-1] + X[n-k]) mod m', 'r[n] = X[n] / m'],
+        fields: [
+          { id: 'sequence', label: 'Secuencia inicial (separada por comas)', type: 'text', ph: '10, 20, 30' },
+          { id: 'paramM', label: 'Modulo m', type: 'number', ph: '100' },
+        ],
+        presets: [
+          {name:'k=3, m=100',  n:15, sequence:'10, 20, 30',        paramM:'100'},
+          {name:'k=4, m=64',   n:20, sequence:'6, 14, 22, 10',    paramM:'64'},
+          {name:'k=5, m=1000', n:20, sequence:'100,200,300,400,500', paramM:'1000'},
+        ]
+      },
+      quadratic: {
+        label: 'Congruencial No Lineal (Cuadratico)', family: 'cg',
+        formula: 'X[n+1] = ( a*X[n]^2 + b*X[n] + c ) mod m   |   r[i] = X[i] / m',
+        steps: ['Calcular a*X[n]^2 + b*X[n] + c', 'Aplicar mod m -> X[n+1]', 'r[n] = X[n] / m'],
+        fields: [
+          { id: 'seed0', label: 'Semilla X0', type: 'number', ph: '5' },
+          { id: 'paramA', label: 'Constante a', type: 'number', ph: '2' },
+          { id: 'paramB', label: 'Constante b', type: 'number', ph: '3' },
+          { id: 'paramCC', label: 'Constante c', type: 'number', ph: '1' },
+          { id: 'paramM', label: 'Modulo m', type: 'number', ph: '100' },
+        ],
+        presets: [
+          {name:'Ejemplo 1', n:15, seed0:'5',  paramA:'2',  paramB:'3',  paramCC:'1',  paramM:'100'},
+          {name:'Ejemplo 2', n:15, seed0:'3',  paramA:'1',  paramB:'2',  paramCC:'4',  paramM:'31'},
+          {name:'Ejemplo 3', n:15, seed0:'7',  paramA:'3',  paramB:'0',  paramCC:'11', paramM:'97'},
+        ]
+      }
+    };
+
+    // =============================================================
+    // ESTADO GLOBAL
+    // =============================================================
+    let currentMethod = 'square';
+    let scatterChart = null;
+    let results = [];
+    let exercises = [];
+    let selectedExerciseId = null;
+
+    // =============================================================
+    // INICIALIZACION
+    // =============================================================
+    document.addEventListener('DOMContentLoaded', onMethodChange);
+
+    // =============================================================
+    // CAMBIO DE METODO: actualiza UI
+    // =============================================================
+    function onMethodChange() {
+      currentMethod = document.getElementById('method-select').value;
+      const cfg = METHODS[currentMethod];
+      const isNC = cfg.family === 'nc';
+      const accent = isNC ? '#a5b4fc' : '#5eead4';
+      const accBg = isNC ? 'rgba(99,102,241,.1)' : 'rgba(20,184,166,.1)';
+      const accBdr = isNC ? 'rgba(99,102,241,.25)' : 'rgba(20,184,166,.25)';
+
+      // Badge
+      const fb = document.getElementById('fam-badge');
+      fb.textContent = isNC ? 'No Congruencial' : 'Congruencial';
+      fb.className = 'badge ' + (isNC ? 'fam-nc' : 'fam-cg');
+
+      // Formula
+      const fb2 = document.getElementById('formula-box');
+      fb2.textContent = cfg.formula;
+      fb2.style.cssText = `font-family:'JetBrains Mono',monospace;font-size:11.5px;border-radius:10px;padding:10px 14px;margin-bottom:8px;text-align:center;background:${accBg};border:1px solid ${accBdr};color:${accent};`;
+
+      // Steps
+      document.getElementById('algo-steps').innerHTML = cfg.steps.map((s, i) => `
+    <li class="flex gap-2 items-start">
+      <span style="width:17px;height:17px;flex-shrink:0;border-radius:50%;background:${accBg};color:${accent};font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px;">${i + 1}</span>
+      <span>${s}</span>
+    </li>`).join('');
+
+      // Preset buttons
+  const isCG = !isNC;
+  document.getElementById('preset-buttons').innerHTML = cfg.presets.map((p, idx) => `
+    <button class="btn-preset ${isCG ? 'cg' : ''}" onclick="loadPreset('${currentMethod}', ${idx})">
+      <i class="fas fa-upload" style="font-size:9px;margin-right:4px;"></i>${p.name}
+    </button>`).join('');
+
+  // Dynamic fields
+      document.getElementById('dynamic-fields').innerHTML = cfg.fields.map(f => {
+        if (f.type === 'select') {
+          return `<div>
+        <label class="lbl" for="f-${f.id}">${f.label}</label>
+        <select id="f-${f.id}" class="inp">
+          ${f.opts.map(o => `<option value="${o}"${o === (f.def || 4) ? ' selected' : ''}>${o} digitos</option>`).join('')}
+        </select></div>`;
+        }
+        return `<div>
+      <label class="lbl" for="f-${f.id}">${f.label}</label>
+      <input id="f-${f.id}" type="${f.type}" placeholder="${f.ph}" class="inp" autocomplete="off">
+    </div>`;
+      }).join('');
+
+      clearResults();
+      hideError();
+    }
+
+    // =============================================================
+    // EJERCICIOS JSON
+    // =============================================================
+    function handleExerciseFile(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const json = JSON.parse(reader.result);
+          loadExercises(json);
+        } catch (error) {
+          showError('JSON invalido: ' + error.message);
+        }
+      };
+      reader.readAsText(file, 'UTF-8');
+      event.target.value = '';
+    }
+
+    function loadExercises(data) {
+      if (!Array.isArray(data)) return showError('El JSON debe ser un arreglo de ejercicios');
+      exercises = data.map((item, idx) => ({
+        id: item.id || `ej-${idx + 1}`,
+        title: item.title || `Ejercicio ${idx + 1}`,
+        type: item.type || (METHODS[item.method]?.family === 'cg' ? 'Congruencial' : 'No Congruencial'),
+        method: item.method || 'square',
+        n: item.n || 10,
+        parameters: item.parameters || {},
+        description: item.description || '',
+      }));
+      selectedExerciseId = null;
+      renderExerciseList();
+      document.getElementById('exercise-summary').textContent = `${exercises.length} ejercicios cargados.`;
+      hideError();
+    }
+
+    function renderExerciseList() {
+      const container = document.getElementById('exercise-list');
+      if (!exercises.length) {
+        container.innerHTML = `<div class="text-xs text-gray-500">Carga un archivo JSON para mostrar los ejercicios.</div>`;
+        document.getElementById('exercise-detail').classList.add('hidden');
+        return;
+      }
+      container.innerHTML = exercises.map(ex => `
+        <button type="button" onclick="selectExercise('${ex.id}')"
+          class="text-left p-3 rounded-xl border border-white/10 bg-white/5 hover:border-indigo-400 ${selectedExerciseId === ex.id ? 'ring-2 ring-indigo-400' : ''}">
+          <div class="flex justify-between items-center gap-2">
+            <span class="font-semibold">${ex.title}</span>
+            <span class="text-[11px] uppercase px-2 py-1 rounded-full bg-slate-800 text-slate-300">${ex.type}</span>
+          </div>
+          <div class="text-xs text-gray-400 mt-1">${METHODS[ex.method]?.label || ex.method}</div>
+        </button>
+      `).join('');
+    }
+
+    function selectExercise(id) {
+      const exercise = exercises.find(e => e.id === id);
+      if (!exercise) return;
+      selectedExerciseId = id;
+      renderExerciseList();
+      applyExercise(exercise);
+      renderExerciseDetail(exercise);
+      generate(); // Procesar automáticamente el ejercicio seleccionado
+    }
+
+    function applyExercise(exercise) {
+      if (!METHODS[exercise.method]) return showError('Metodo desconocido en el ejercicio: ' + exercise.method);
+      document.getElementById('method-select').value = exercise.method;
+      onMethodChange();
+      if (exercise.n) document.getElementById('input-n').value = exercise.n;
+      Object.entries(exercise.parameters || {}).forEach(([key, value]) => {
+        const input = document.getElementById('f-' + key);
+        if (!input) return;
+        input.value = Array.isArray(value) ? value.join(', ') : String(value);
+      });
+    }
+
+    function renderExerciseDetail(exercise) {
+      const detail = document.getElementById('exercise-detail');
+      detail.classList.remove('hidden');
+      detail.innerHTML = `
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Ejercicio seleccionado</div>
+        <div class="mb-2"><span class="font-semibold">Título:</span> ${exercise.title}</div>
+        <div class="mb-2"><span class="font-semibold">Tipo:</span> ${exercise.type}</div>
+        <div class="mb-2"><span class="font-semibold">Método:</span> ${METHODS[exercise.method]?.label || exercise.method}</div>
+        <div class="mb-2"><span class="font-semibold">Iteraciones:</span> ${exercise.n}</div>
+        <div class="mb-2"><span class="font-semibold">Descripción:</span> ${exercise.description || 'Sin descripción'}</div>
+        <div class="text-xs mt-2 text-gray-400"><span class="font-semibold">Parámetros:</span></div>
+        <pre class="text-xs p-3 rounded-xl bg-slate-950/70 text-slate-200 overflow-x-auto">${JSON.stringify(exercise.parameters, null, 2)}</pre>
+      `;
+    }
+
+    // =============================================================
+    // HELPERS: leer campos
+    // =============================================================
+    function gf(id) { const e = document.getElementById('f-' + id); return e ? e.value.trim() : ''; }
+    function gi(id) { return parseInt(gf(id), 10); }
+    function gNum(id) { return parseFloat(gf(id)); }
+
+    // =============================================================
+    // HELPER: extraccion de digitos medios (metodos NC)
+    // =============================================================
+    function extractMiddle(numStr, d) {
+      const padded = numStr.padStart(2 * d, '0').slice(-(2 * d));
+      const start = Math.floor(d / 2);
+      return { padded, middle: padded.substring(start, start + d), start, end: start + d - 1 };
+    }
+
+    // =============================================================
+    // ALGORITMOS (retornan array de registros)
+    // =============================================================
+
+    /* Formato de un registro:
+       { i, x, xPad, r, rStr, op, [midInfo], [isCycle, cycleBackTo] }
+    */
+
+    function runSquare(n) {
+      const seed0 = gi('seed0'), d = gi('digits');
+      if (isNaN(seed0) || seed0 < 0) return err('Semilla X0 invalida');
+      const mod = Math.pow(10, d), data = [], seen = new Map();
+      let x = seed0;
+      for (let i = 0; i < n; i++) {
+        if (seen.has(x)) { data.push({ i, x, xPad: x.toString().padStart(d, '0'), r: x / mod, rStr: (x / mod).toFixed(6), isCycle: true, cycleBackTo: seen.get(x) }); break; }
+        seen.set(x, i);
+        const sq = BigInt(x) * BigInt(x);
+        const mi = extractMiddle(sq.toString(), d);
+        data.push({ i, x, xPad: x.toString().padStart(d, '0'), r: x / mod, rStr: (x / mod).toFixed(6), op: `${x}^2 = ${sq}`, midInfo: mi });
+        x = parseInt(mi.middle, 10);
+        if (x === 0 && i > 0) { data.push({ i: i + 1, x: 0, xPad: '0'.repeat(d), r: 0, rStr: '0.000000', isCycle: true, cycleBackTo: 0 }); break; }
+      }
+      return data;
+    }
+
+    function runProduct(n) {
+      const seed0 = gi('seed0'), seed1 = gi('seed1'), d = gi('digits');
+      if (isNaN(seed0) || seed0 < 0) return err('Semilla X0 invalida');
+      if (isNaN(seed1) || seed1 < 0) return err('Semilla X1 invalida');
+      const mod = Math.pow(10, d), data = [], seen = new Map();
+      let xP = seed0, xC = seed1;
+      for (let i = 0; i < n; i++) {
+        if (seen.has(xC)) { data.push({ i, x: xC, xPad: xC.toString().padStart(d, '0'), r: xC / mod, rStr: (xC / mod).toFixed(6), isCycle: true, cycleBackTo: seen.get(xC) }); break; }
+        seen.set(xC, i);
+        const prod = BigInt(xP) * BigInt(xC);
+        const mi = extractMiddle(prod.toString(), d);
+        data.push({ i, x: xC, xPad: xC.toString().padStart(d, '0'), r: xC / mod, rStr: (xC / mod).toFixed(6), op: `${xP}x${xC}=${prod}`, midInfo: mi });
+        xP = xC; xC = parseInt(mi.middle, 10);
+        if (xC === 0) { data.push({ i: i + 1, x: 0, xPad: '0'.repeat(d), r: 0, rStr: '0.000000', isCycle: true, cycleBackTo: 0 }); break; }
+      }
+      return data;
+    }
+
+    function runConstant(n) {
+      const seed0 = gi('seed0'), k = gi('constK'), d = gi('digits');
+      if (isNaN(seed0) || seed0 < 0) return err('Semilla X0 invalida');
+      if (isNaN(k) || k <= 0) return err('Constante k debe ser positiva');
+      const mod = Math.pow(10, d), data = [], seen = new Map();
+      let x = seed0;
+      for (let i = 0; i < n; i++) {
+        if (seen.has(x)) { data.push({ i, x, xPad: x.toString().padStart(d, '0'), r: x / mod, rStr: (x / mod).toFixed(6), isCycle: true, cycleBackTo: seen.get(x) }); break; }
+        seen.set(x, i);
+        const prod = BigInt(k) * BigInt(x);
+        const mi = extractMiddle(prod.toString(), d);
+        data.push({ i, x, xPad: x.toString().padStart(d, '0'), r: x / mod, rStr: (x / mod).toFixed(6), op: `${k}x${x}=${prod}`, midInfo: mi });
+        x = parseInt(mi.middle, 10);
+        if (x === 0 && i > 0) { data.push({ i: i + 1, x: 0, xPad: '0'.repeat(d), r: 0, rStr: '0.000000', isCycle: true, cycleBackTo: 0 }); break; }
+      }
+      return data;
+    }
+
+    function runLinear(n) {
+      const x0 = gi('seed0'), a = gi('paramA'), c = gi('paramC'), m = gi('paramM');
+      if (isNaN(x0)) return err('Semilla X0 invalida');
+      if (isNaN(a)) return err('Multiplicador a invalido');
+      if (isNaN(c)) return err('Incremento c invalido');
+      if (!m || m <= 0) return err('Modulo m debe ser > 0');
+      const data = [], seen = new Map(); let x = x0;
+      for (let i = 0; i < n; i++) {
+        if (seen.has(x)) { data.push({ i, x, xPad: String(x), r: x / m, rStr: (x / m).toFixed(6), isCycle: true, cycleBackTo: seen.get(x) }); break; }
+        seen.set(x, i);
+        const xn = (a * x + c) % m;
+        data.push({ i, x, xPad: String(x), r: x / m, rStr: (x / m).toFixed(6), op: `(${a}*${x}+${c}) mod ${m} = ${xn}` });
+        x = xn;
+      }
+      return data;
+    }
+
+    function runMultiplicative(n) {
+      const x0 = gi('seed0'), a = gi('paramA'), m = gi('paramM');
+      if (isNaN(x0)) return err('Semilla X0 invalida');
+      if (isNaN(a)) return err('Multiplicador a invalido');
+      if (!m || m <= 0) return err('Modulo m debe ser > 0');
+      const data = [], seen = new Map(); let x = x0;
+      for (let i = 0; i < n; i++) {
+        if (seen.has(x)) { data.push({ i, x, xPad: String(x), r: x / m, rStr: (x / m).toFixed(6), isCycle: true, cycleBackTo: seen.get(x) }); break; }
+        seen.set(x, i);
+        const xn = (a * x) % m;
+        data.push({ i, x, xPad: String(x), r: x / m, rStr: (x / m).toFixed(6), op: `(${a}*${x}) mod ${m} = ${xn}` });
+        x = xn;
+      }
+      return data;
+    }
+
+    function runAdditive(n) {
+      const seqRaw = gf('sequence'), m = gi('paramM');
+      if (!seqRaw) return err('Ingresa la secuencia inicial');
+      if (!m || m <= 0) return err('Modulo m debe ser > 0');
+      const seq = seqRaw.split(',').map(s => parseInt(s.trim(), 10)).filter(v => !isNaN(v));
+      if (seq.length < 2) return err('La secuencia debe tener al menos 2 valores');
+      const k = seq.length, data = [], buf = [...seq];
+      for (let i = 0; i < Math.min(seq.length, n); i++)
+        data.push({ i, x: seq[i], xPad: String(seq[i]), r: seq[i] / m, rStr: (seq[i] / m).toFixed(6), op: 'Valor inicial' });
+      for (let i = k; i < n; i++) {
+        const xp = buf[buf.length - 1], xpk = buf[buf.length - k];
+        const xn = (xp + xpk) % m;
+        data.push({ i, x: xn, xPad: String(xn), r: xn / m, rStr: (xn / m).toFixed(6), op: `(${xp}+${xpk}) mod ${m} = ${xn}` });
+        buf.push(xn);
+      }
+      return data;
+    }
+
+    function runQuadratic(n) {
+      const x0 = gi('seed0'), a = gi('paramA'), b = gi('paramB'), c = gi('paramCC'), m = gi('paramM');
+      if (isNaN(x0)) return err('Semilla X0 invalida');
+      if (isNaN(a)) return err('Constante a invalida');
+      if (isNaN(b)) return err('Constante b invalida');
+      if (isNaN(c)) return err('Constante c invalida');
+      if (!m || m <= 0) return err('Modulo m debe ser > 0');
+      const data = [], seen = new Map(); let x = x0;
+      for (let i = 0; i < n; i++) {
+        if (seen.has(x)) { data.push({ i, x, xPad: String(x), r: x / m, rStr: (x / m).toFixed(6), isCycle: true, cycleBackTo: seen.get(x) }); break; }
+        seen.set(x, i);
+        const xn = (a * x * x + b * x + c) % m;
+        data.push({ i, x, xPad: String(x), r: x / m, rStr: (x / m).toFixed(6), op: `(${a}*${x}^2+${b}*${x}+${c}) mod ${m} = ${xn}` });
+        x = xn;
+      }
+      return data;
+    }
+
+    // Error helper (shows error, returns null)
+    function err(msg) { showError(msg); return null; }
+
+    // =============================================================
+    // GENERAR
+    // =============================================================
+    function generate() {
+      hideError();
+      const n = parseInt(document.getElementById('input-n').value, 10);
+      if (!n || n < 1) return showError('Numero de iteraciones invalido (minimo 1)');
+
+      const runners = {
+        square: runSquare, product: runProduct, constant: runConstant,
+        linear: runLinear, multiplicative: runMultiplicative,
+        additive: runAdditive, quadratic: runQuadratic
+      };
+      results = runners[currentMethod](n);
+      if (!results) return;
+      renderAll();
+    }
+
+    // =============================================================
+    // RENDER
+    // =============================================================
+    function renderAll() {
+      renderStats();
+      renderTable();
+      renderNumbers();
+      renderChart();
+    }
+
+    function renderStats() {
+      const row = document.getElementById('stats-row');
+      const valid = results.filter(r => !r.isCycle);
+      const cyc = results.find(r => r.isCycle);
+      const nums = valid.map(r => r.r);
+      const avg = nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
+      const period = cyc ? (cyc.i - cyc.cycleBackTo) : valid.length;
+
+      row.style.display = 'grid';
+      row.innerHTML = [
+        { lbl: 'Valores generados', val: valid.length, cls: 'text-indigo-300' },
+        { lbl: 'Periodo detectado', val: cyc ? period : 'N/A', cls: cyc ? 'text-amber-400' : 'text-gray-500' },
+        { lbl: 'Ciclo en paso i =', val: cyc ? cyc.i : '---', cls: cyc ? 'text-red-400' : 'text-gray-500' },
+        { lbl: 'Promedio (r\u0305)', val: avg.toFixed(5), cls: 'text-green-400' },
+      ].map(s => `
+    <div class="stat-card">
+      <div class="text-xs text-gray-500 mb-1">${s.lbl}</div>
+      <div class="text-lg font-bold font-mono ${s.cls}">${s.val}</div>
+    </div>`).join('');
+    }
+
+    function renderTable() {
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('table-wrapper').style.display = 'block';
+      const badge = document.getElementById('table-badge');
+      badge.style.display = 'inline-block';
+      badge.textContent = `${results.filter(r => !r.isCycle).length} resultados`;
+
+      const isNC = METHODS[currentMethod].family === 'nc';
+      document.getElementById('table-head').innerHTML = `<tr>
+    <th>i</th>
+    <th>${isNC ? 'X[i] (pad.)' : 'X[i]'}</th>
+    <th>${isNC ? 'Producto padded [digitos medios]' : 'Operacion'}</th>
+    <th>r[i]</th>
+  </tr>`;
+
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = '';
+
+      results.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        tr.style.animationDelay = `${idx * 18}ms`;
+        if (row.isCycle) tr.classList.add('cycle-tr');
+
+        let opCell;
+        if (row.isCycle) {
+          opCell = `<td class="text-red-400 text-xs" colspan="1">
+        <i class="fas fa-rotate-left mr-1"></i>Ciclo — ya aparecio en i = ${row.cycleBackTo}
+      </td>`;
+        } else if (row.midInfo) {
+          const { padded, start, end } = row.midInfo;
+          const hl = padded.substring(0, start)
+            + `<span class="hl-mid">${padded.substring(start, end + 1)}</span>`
+            + padded.substring(end + 1);
+          opCell = `<td class="text-gray-400 font-mono text-xs">${hl}</td>`;
+        } else {
+          opCell = `<td class="text-gray-400 text-xs">${row.op || ''}</td>`;
+        }
+
+        tr.innerHTML = `
+      <td class="text-gray-500">${row.i}</td>
+      <td class="text-white font-semibold font-mono">${row.xPad}</td>
+      ${opCell}
+      <td class="text-green-400 font-semibold font-mono">${row.rStr}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderNumbers() {
+      const valid = results.filter(r => !r.isCycle);
+      const sec = document.getElementById('numbers-section');
+      sec.classList.remove('hidden');
+      document.getElementById('numbers-grid').innerHTML = valid.map(r =>
+        `<span class="text-xs font-mono px-3 py-1 rounded-lg cursor-default" title="i=${r.i}"
+      style="background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.18);color:#86efac;">
+      r${r.i}=${r.rStr}
+    </span>`
+      ).join('');
+    }
+
+    function renderChart() {
+      const valid = results.filter(r => !r.isCycle);
+      const points = [];
+      for (let i = 0; i < valid.length - 1; i++)
+        points.push({ x: valid[i].r, y: valid[i + 1].r });
+
+      document.getElementById('chart-empty').style.display = 'none';
+      const canvas = document.getElementById('scatter-chart');
+      canvas.classList.remove('hidden');
+      if (scatterChart) scatterChart.destroy();
+
+      const isNC = METHODS[currentMethod].family === 'nc';
+      const color = isNC ? 'rgba(99,102,241,.75)' : 'rgba(20,184,166,.75)';
+      const grid = 'rgba(255,255,255,.05)';
+      const tick = '#4b5563';
+
+      scatterChart = new Chart(canvas, {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: '(r[i], r[i+1])',
+            data: points,
+            backgroundColor: color,
+            pointRadius: points.length > 80 ? 2 : 4,
+            pointHoverRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { labels: { color: '#9ca3af', font: { size: 11 } } },
+            tooltip: { callbacks: { label: c => `(${c.parsed.x.toFixed(4)}, ${c.parsed.y.toFixed(4)})` } }
+          },
+          scales: {
+            x: { min: 0, max: 1, grid: { color: grid }, ticks: { color: tick, font: { size: 10 } }, title: { display: true, text: 'r[i]', color: '#6b7280', font: { size: 11 } } },
+            y: { min: 0, max: 1, grid: { color: grid }, ticks: { color: tick, font: { size: 10 } }, title: { display: true, text: 'r[i+1]', color: '#6b7280', font: { size: 11 } } }
+          }
+        }
+      });
+    }
+
+    // =============================================================
+    // LOAD PRESET: carga valores en los inputs
+    // =============================================================
+    function loadPreset(methodKey, idx) {
+      const preset = METHODS[methodKey].presets[idx];
+      if (!preset) return;
+
+      // Cargar iteraciones
+      const nEl = document.getElementById('input-n');
+      if (nEl && preset.n) nEl.value = preset.n;
+
+      // Cargar cada campo del preset en su input/select
+      Object.entries(preset).forEach(([key, val]) => {
+        if (key === 'name' || key === 'n') return;
+        const el = document.getElementById('f-' + key);
+        if (el) el.value = val;
+      });
+
+      // Feedback visual: resaltar el boton activo
+      const isNC = METHODS[methodKey].family === 'nc';
+      document.querySelectorAll('#preset-buttons .btn-preset').forEach((btn, i) => {
+        btn.classList.toggle('loaded', i === idx);
+        if (i === idx && !isNC) btn.classList.add('cg');
+      });
+
+      // Mostrar feedback de campo actualizado brevemente
+      const hint = document.getElementById('preset-hint');
+      hint.textContent = 'Listo — presiona Generar';
+      hint.style.color = isNC ? '#a5b4fc' : '#5eead4';
+      setTimeout(() => { hint.textContent = 'Haz clic para cargar'; hint.style.color = ''; }, 2500);
+    }
+
+    // =============================================================
+    // UTILIDADES
+    // =============================================================
+    function clearResults() {
+
+      results = [];
+      document.getElementById('empty-state').style.display = 'block';
+      document.getElementById('table-wrapper').style.display = 'none';
+      document.getElementById('table-head').innerHTML = '';
+      document.getElementById('table-body').innerHTML = '';
+      document.getElementById('table-badge').style.display = 'none';
+      document.getElementById('stats-row').style.display = 'none';
+      document.getElementById('numbers-section').classList.add('hidden');
+      document.getElementById('chart-empty').style.display = 'block';
+      document.getElementById('scatter-chart').classList.add('hidden');
+      if (scatterChart) { scatterChart.destroy(); scatterChart = null; }
+    }
+
+    function showError(msg) {
+      document.getElementById('error-text').textContent = msg;
+      document.getElementById('error-box').classList.remove('hidden');
+    }
+    function hideError() {
+      document.getElementById('error-box').classList.add('hidden');
+    }
+  </script>
+</body>
+
+</html>

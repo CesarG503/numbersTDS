@@ -1,0 +1,108 @@
+[
+  {
+    "id": "guia-1a",
+    "title": "Ejercicio 1.a - Lineal Mixto",
+    "type": "Congruencial",
+    "method": "linear",
+    "n": 31,
+    "parameters": {
+      "seed0": "21",
+      "paramA": "21",
+      "paramC": "15",
+      "paramM": "31"
+    },
+    "description": "Determinar el periodo del generador (21x + 15) mod 31."
+  },
+  {
+    "id": "guia-1b",
+    "title": "Ejercicio 1.b - Lineal Mixto",
+    "type": "Congruencial",
+    "method": "linear",
+    "n": 128,
+    "parameters": {
+      "seed0": "7",
+      "paramA": "13",
+      "paramC": "9",
+      "paramM": "128"
+    },
+    "description": "Determinar el periodo del generador (13x + 9) mod 128."
+  },
+  {
+    "id": "guia-1c",
+    "title": "Ejercicio 1.c - Multiplicativo",
+    "type": "Congruencial",
+    "method": "multiplicative",
+    "n": 31,
+    "parameters": {
+      "seed0": "23",
+      "paramA": "17",
+      "paramM": "31"
+    },
+    "description": "Determinar el periodo del generador (17x) mod 31."
+  },
+  {
+    "id": "guia-3",
+    "title": "Ejercicio 3 - Serie Congruencial",
+    "type": "Congruencial",
+    "method": "linear",
+    "n": 50,
+    "parameters": {
+      "seed0": "23",
+      "paramA": "121",
+      "paramC": "553",
+      "paramM": "177"
+    },
+    "description": "Programar la serie y determinar ciclo de vida."
+  },
+  {
+    "id": "guia-6",
+    "title": "Ejercicio 6 - Cuadrados Medios",
+    "type": "No Congruencial",
+    "method": "square",
+    "n": 50,
+    "parameters": {
+      "seed0": "5735",
+      "digits": "4"
+    },
+    "description": "Generar 50 números con cuadrados medios para prueba de uniformidad."
+  },
+  {
+    "id": "guia-8",
+    "title": "Ejercicio 8 - Multiplicativo",
+    "type": "Congruencial",
+    "method": "multiplicative",
+    "n": 50,
+    "parameters": {
+      "seed0": "167",
+      "paramA": "71",
+      "paramM": "357"
+    },
+    "description": "Generar secuencia para prueba de corridas."
+  },
+  {
+    "id": "guia-9",
+    "title": "Ejercicio 9 - MINSTD (Multiplicativo)",
+    "type": "Congruencial",
+    "method": "multiplicative",
+    "n": 200,
+    "parameters": {
+      "seed0": "1",
+      "paramA": "16807",
+      "paramM": "2147483647"
+    },
+    "description": "Generador estándar mínimo para diversas pruebas estadísticas."
+  },
+  {
+    "id": "guia-10",
+    "title": "Ejercicio 10 - Super-Duper",
+    "type": "Congruencial",
+    "method": "multiplicative",
+    "n": 200,
+    "parameters": {
+      "seed0": "1",
+      "paramA": "69069",
+      "paramM": "4294967296"
+    },
+    "description": "Generador Super-Duper para validación de independencia."
+  }
+]
