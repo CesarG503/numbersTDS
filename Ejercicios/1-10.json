@@ -1,0 +1,146 @@
+[
+  {
+    "id": "ej-01a",
+    "title": "Ejercicio 1.a - Lineal Mixto",
+    "method": "linear",
+    "n": 32,
+    "parameters": { "seed0": 21, "paramA": 21, "paramC": 15, "paramM": 31 },
+    "description": "Periodo de (21x + 15) mod 31."
+  },
+  {
+    "id": "ej-01b",
+    "title": "Ejercicio 1.b - Lineal Mixto",
+    "method": "linear",
+    "n": 128,
+    "parameters": { "seed0": 7, "paramA": 13, "paramC": 9, "paramM": 128 },
+    "description": "Periodo de (13x + 9) mod 128."
+  },
+  {
+    "id": "ej-01c",
+    "title": "Ejercicio 1.c - Multiplicativo",
+    "method": "multiplicative",
+    "n": 32,
+    "parameters": { "seed0": 23, "paramA": 17, "paramM": 31 },
+    "description": "Periodo de (17x) mod 31."
+  },
+  {
+    "id": "ej-01d",
+    "title": "Ejercicio 1.d - Aditivo",
+    "method": "linear",
+    "n": 256,
+    "parameters": { "seed0": 17, "paramA": 1, "paramC": 121, "paramM": 256 },
+    "description": "Periodo de (121 + x) mod 256."
+  },
+  {
+    "id": "ej-02a",
+    "title": "Ejercicio 2.a - Lehmer",
+    "method": "linear",
+    "n": 20,
+    "parameters": { "seed0": 17, "paramA": 137, "paramC": 47, "paramM": 17 },
+    "description": "Xj+1=(137*Xj+47) mod 17"
+  },
+  {
+    "id": "ej-02b",
+    "title": "Ejercicio 2.b - Lehmer",
+    "method": "linear",
+    "n": 25,
+    "parameters": { "seed0": 77, "paramA": 191, "paramC": 17, "paramM": 23 },
+    "description": "Xj+1=(191*Xj+17) mod 23"
+  },
+  {
+    "id": "ej-02c",
+    "title": "Ejercicio 2.c - Lehmer",
+    "method": "linear",
+    "n": 40,
+    "parameters": { "seed0": 27, "paramA": 237, "paramC": 71, "paramM": 37 },
+    "description": "Xj+1=(237*Xj+71) mod 37"
+  },
+  {
+    "id": "ej-02d",
+    "title": "Ejercicio 2.d - Lehmer",
+    "method": "linear",
+    "n": 20,
+    "parameters": { "seed0": 23, "paramA": 117, "paramC": 31, "paramM": 19 },
+    "description": "Xj+1=(117*Xj+31) mod 19"
+  },
+  {
+    "id": "ej-02e",
+    "title": "Ejercicio 2.e - Lehmer",
+    "method": "linear",
+    "n": 40,
+    "parameters": { "seed0": 29, "paramA": 157, "paramC": 47, "paramM": 37 },
+    "description": "Xj+1=(157*Xj+47) mod 37"
+  },
+  {
+    "id": "ej-02f",
+    "title": "Ejercicio 2.f - Lehmer",
+    "method": "linear",
+    "n": 30,
+    "parameters": { "seed0": 19, "paramA": 321, "paramC": 11, "paramM": 27 },
+    "description": "Xj+1=(321*Xj+11) mod 27"
+  },
+  {
+    "id": "ej-03",
+    "title": "Ejercicio 3 - Serie Congruencial",
+    "method": "linear",
+    "n": 50,
+    "parameters": {
+        "seed0": 23,
+        "paramA": 121,
+        "paramC": 553,
+        "paramM": 177
+    },
+    "description": "Determinar periodo y realizar pruebas de media, varianza y uniformidad."
+  },
+  {
+    "id": "ej-04a",
+    "title": "Ejercicio 4.a - Lineal",
+    "method": "linear",
+    "n": 100,
+    "parameters": { "seed0": 1457, "paramA": 1117, "paramC": 3057, "paramM": 1679567 },
+    "description": "Pruebas de uniformidad, series y corridas."
+  },
+  {
+    "id": "ej-04b",
+    "title": "Ejercicio 4.b - Lineal",
+    "method": "linear",
+    "n": 100,
+    "parameters": { "seed0": 1117, "paramA": 2177, "paramC": 2367, "paramM": 1351867 },
+    "description": "Pruebas de uniformidad, series y corridas."
+  },
+    {
+    "id": "ej-06",
+    "title": "Ejercicio 6 - Cuadrados Medios",
+    "method": "square",
+    "n": 50,
+    "parameters": {
+        "seed0": 5735,
+        "digits": 4
+    },
+    "description": "Generar 50 números y determinar uniformidad con alfa=10%."
+    },
+  {
+    "id": "ej-08",
+    "title": "Ejercicio 8 - Multiplicativo",
+    "method": "multiplicative",
+    "n": 50,
+    "parameters": { "seed0": 167, "paramA": 71, "paramM": 357 },
+    "description": "Pruebas de corridas arriba/abajo y de la media."
+  },
+  {
+    "id": "ej-09",
+    "title": "Ejercicio 9 - MINSTD",
+    "method": "multiplicative",
+    "n": 200,
+    "parameters": { "seed0": 1, "paramA": 16807, "paramM": 2147483647 },
+    "description": "Pruebas de media, varianza, uniformidad, corridas, póker y series."
+  },
+  {
+    "id": "ej-10",
+    "title": "Ejercicio 10 - Super-Duper",
+    "method": "multiplicative",
+    "n": 200,
+    "parameters": { "seed0": 1, "paramA": 69069, "paramM": 4294967296 },
+    "description": "Pruebas de media, varianza, uniformidad, corridas, póker y series."
+  }
+]
