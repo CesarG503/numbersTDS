@@ -366,15 +366,29 @@
             <option value="external">Lista externa</option>
           </select>
         </div>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div class="flex items-center gap-2">
+            <input id="validation-json-input" type="file" accept="application/json,.json" style="display:none" onchange="loadExternalJson(event)">
+            <button class="btn-gen text-sm py-2 px-3" onclick="document.getElementById('validation-json-input').click()">
+              <i class="fas fa-file-import"></i> Cargar JSON de validación
+            </button>
+            <button class="btn-gen text-sm py-2 px-3" onclick="renderValidation()">
+              <i class="fas fa-play"></i> Ejecutar validación
+            </button>
+          </div>
+          <span id="validation-json-summary" class="text-xs text-gray-500">Ningún JSON cargado</span>
+        </div>
         <div id="external-list-container" class="hidden mb-4">
           <label class="lbl" for="external-numbers">Lista de números r_i (separados por comas, espacios o líneas)</label>
           <textarea id="external-numbers" class="inp" rows="5" placeholder="0.1234, 0.5678, 0.9012..."></textarea>
           <div class="flex gap-2 mt-2">
             <button class="btn-gen text-sm py-2 px-3" onclick="renderValidation()">Validar lista</button>
-            <input id="external-json-input" type="file" accept="application/json,.json" style="display:none" onchange="loadExternalJson(event)">
-            <button class="btn-gen text-sm py-2 px-3" onclick="document.getElementById('external-json-input').click()">
-              <i class="fas fa-file-import"></i> Cargar JSON
-            </button>
+          </div>
+        </div>
+        <div class="mb-4">
+          <div class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Conjuntos JSON cargados</div>
+          <div id="validation-dataset-list" class="flex flex-col gap-2 text-sm text-white">
+            <div class="text-xs text-gray-500">Carga un JSON para ver los conjuntos de validación.</div>
           </div>
         </div>
         <div id="validation-results" class="text-sm text-white">
@@ -506,6 +520,8 @@
     let results = [];
     let exercises = [];
     let selectedExerciseId = null;
+    let validationDatasets = [];
+    let selectedValidationDatasetId = null;
 
     // =============================================================
     // INICIALIZACION
@@ -587,17 +603,32 @@
 
     function normalizeMethod(method) {
       if (!method) return 'square';
-      return String(method).trim().toLowerCase();
+      const value = String(method).trim().toLowerCase();
+      const aliases = {
+        square: ['square', 'cuadrados medios', 'cuadrados', 'cuadrado'],
+        product: ['product', 'productos medios', 'productos', 'producto'],
+        constant: ['constant', 'multiplicador constante', 'constante', 'k'],
+        linear: ['linear', 'lineal', 'lineal mixto', 'mixto', 'mixto lineal'],
+        multiplicative: ['multiplicative', 'multiplicativo'],
+        additive: ['additive', 'aditivo'],
+        quadratic: ['quadratic', 'cuadratic', 'cuadratico', 'cuadrático', 'no lineal', 'no-lineal', 'no congruencial'],
+      };
+      for (const key in aliases) {
+        if (aliases[key].includes(value)) return key;
+      }
+      return value;
     }
 
     function loadExercises(data) {
       if (!Array.isArray(data)) return showError('El JSON debe ser un arreglo de ejercicios');
       exercises = data.map((item, idx) => {
         const method = normalizeMethod(item.method);
+        const methodInfo = METHODS[method];
+        const family = methodInfo ? methodInfo.family : null;
         return {
           id: item.id || `ej-${idx + 1}`,
           title: item.title || `Ejercicio ${idx + 1}`,
-          type: item.type || (METHODS[method]?.family === 'cg' ? 'Congruencial' : 'No Congruencial'),
+          type: item.type || (family === 'cg' ? 'Congruencial' : family === 'nc' ? 'No Congruencial' : 'Método desconocido'),
           method,
           n: item.n || 10,
           parameters: item.parameters || {},
@@ -632,6 +663,7 @@
     function selectExercise(id) {
       const exercise = exercises.find(e => e.id === id);
       if (!exercise) return;
+      if (!METHODS[exercise.method]) return showError(`Método desconocido: ${exercise.method}`);
       selectedExerciseId = id;
       renderExerciseList();
       applyExercise(exercise);
@@ -643,13 +675,21 @@
       const normalized = String(key).trim().toLowerCase();
       const fallback = {
         x0: 'seed0',
+        seed0: 'seed0',
         x1: 'seed1',
+        seed1: 'seed1',
         k: 'constK',
+        constk: 'constK',
         c: method === 'quadratic' ? 'paramCC' : 'paramC',
         cc: 'paramCC',
+        paramc: method === 'quadratic' ? 'paramCC' : 'paramC',
+        paramcc: 'paramCC',
         a: 'paramA',
+        parama: 'paramA',
         b: 'paramB',
+        paramb: 'paramB',
         m: 'paramM',
+        paramm: 'paramM',
         sequence: 'sequence',
       };
       return fallback[normalized] || normalized;
@@ -847,7 +887,9 @@
         linear: runLinear, multiplicative: runMultiplicative,
         additive: runAdditive, quadratic: runQuadratic
       };
-      results = runners[currentMethod](n);
+      const runner = runners[currentMethod];
+      if (!runner) return showError(`Metodo no soportado: ${currentMethod}`);
+      results = runner(n);
       if (!results) return;
       renderAll();
     }
@@ -860,9 +902,7 @@
       renderTable();
       renderNumbers();
       renderChart();
-      if (document.getElementById('validation-source').value === 'generated') {
-        renderValidation();
-      }
+      renderValidation();
     }
 
     function renderStats() {
@@ -1168,6 +1208,10 @@
       let rValues = [];
       if (source === 'generated') {
         const valid = results.filter(r => !r.isCycle);
+        if (!valid.length) {
+          showValidationMessage('Genera números o ingresa lista para ver las pruebas estadísticas.');
+          return;
+        }
         rValues = valid.map(r => r.r);
       } else {
         const text = document.getElementById('external-numbers').value.trim();
@@ -1245,7 +1289,7 @@
       return numbers.length >= 10 ? numbers : null;
     }
 
-    // Cargar JSON externo para lista
+    // Handle validation JSON dataset files
     function loadExternalJson(event) {
       const file = event.target.files?.[0];
       if (!file) return;
@@ -1253,13 +1297,16 @@
       reader.onload = () => {
         try {
           const json = JSON.parse(reader.result);
-          if (json.numbers && Array.isArray(json.numbers)) {
-            document.getElementById('external-numbers').value = json.numbers.join(', ');
-            if (json.alpha) document.getElementById('validation-alpha').value = json.alpha * 100;
-            if (json.m) document.getElementById('validation-m').value = json.m;
-            renderValidation();
+          if (Array.isArray(json)) {
+            if (json.length > 0 && typeof json[0] === 'number') {
+              loadValidationJson([{ numbers: json }]);
+            } else {
+              loadValidationJson(json);
+            }
+          } else if (json.numbers && Array.isArray(json.numbers)) {
+            loadValidationJson([json]);
           } else {
-            showError('El JSON debe tener un array "numbers".');
+            showError('El JSON debe ser un arreglo o un objeto con campo "numbers".');
           }
         } catch (error) {
           showError('JSON inválido: ' + error.message);
@@ -1267,6 +1314,65 @@
       };
       reader.readAsText(file, 'UTF-8');
       event.target.value = '';
+    }
+
+    function normalizeValidationDataset(dataset, idx) {
+      const id = dataset.id || `vd-${idx + 1}`;
+      return {
+        id,
+        title: dataset.title || `Validación ${idx + 1}`,
+        description: dataset.description || '',
+        numbers: Array.isArray(dataset.numbers) ? dataset.numbers.map(Number).filter(n => !isNaN(n) && n >= 0 && n <= 1) : [],
+        alpha: dataset.alpha != null ? Number(dataset.alpha) : 0.05,
+        m: dataset.m != null ? Number(dataset.m) : 10,
+      };
+    }
+
+    function loadValidationJson(data) {
+      validationDatasets = data.map((item, idx) => normalizeValidationDataset(item, idx));
+      selectedValidationDatasetId = null;
+      renderValidationDatasetList();
+      document.getElementById('validation-json-summary').textContent = `${validationDatasets.length} conjuntos cargados`;
+      showValidationMessage('Selecciona un conjunto para ver los resultados.');
+    }
+
+    function renderValidationDatasetList() {
+      const container = document.getElementById('validation-dataset-list');
+      if (!validationDatasets.length) {
+        container.innerHTML = `<div class="text-xs text-gray-500">Carga un JSON para ver los conjuntos de validación.</div>`;
+        return;
+      }
+      container.innerHTML = validationDatasets.map(dataset => `
+        <button type="button" onclick="selectValidationDataset('${dataset.id}')"
+          class="text-left p-3 rounded-xl border border-white/10 bg-white/5 hover:border-indigo-400 ${selectedValidationDatasetId === dataset.id ? 'ring-2 ring-indigo-400' : ''}">
+          <div class="flex justify-between items-center gap-2">
+            <span class="font-semibold">${dataset.title}</span>
+            <span class="text-[11px] uppercase px-2 py-1 rounded-full bg-slate-800 text-slate-300">${dataset.numbers.length} valores</span>
+          </div>
+          <div class="text-xs text-gray-400 mt-1">${dataset.description}</div>
+        </button>
+      `).join('');
+    }
+
+    function selectValidationDataset(id) {
+      const dataset = validationDatasets.find(d => d.id === id);
+      if (!dataset) return;
+      selectedValidationDatasetId = id;
+      renderValidationDatasetList();
+      applyValidationDataset(dataset);
+      renderValidation();
+    }
+
+    function applyValidationDataset(dataset) {
+      document.getElementById('validation-source').value = 'external';
+      toggleValidationSource();
+      document.getElementById('external-numbers').value = dataset.numbers.join(', ');
+      document.getElementById('validation-alpha').value = dataset.alpha * 100;
+      document.getElementById('validation-m').value = dataset.m;
+    }
+
+    function showValidationMessage(message) {
+      document.getElementById('validation-results').innerHTML = `<div class="text-gray-500">${message}</div>`;
     }
   </script>
 </body>

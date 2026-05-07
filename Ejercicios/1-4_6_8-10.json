@@ -32,6 +32,17 @@
     "description": "Periodo de (121 + x) mod 256."
   },
   {
+  "id": "ej-01e",
+  "title": "Ejercicio 1.e - Congruencial de Segundo Orden",
+  "method": "additive",
+  "n": 64,
+  "parameters": {
+    "sequence": "21, 43",
+    "paramM": 64
+  },
+  "description": "NOTA: Este ejercicio requiere multiplicadores (21, 15) que el método aditivo estándar no soporta actualmente. Xj+1 = (21Xj + 15Xj-1) mod 64."
+  },
+  {
     "id": "ej-02a",
     "title": "Ejercicio 2.a - Lehmer",
     "method": "linear",
