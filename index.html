@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -1581,62 +1581,52 @@
       const color = passes ? 'text-green-400' : 'text-red-400';
       const bg = passes ? 'bg-green-400/10' : 'bg-red-400/10';
       const border = passes ? 'border-green-400/50' : 'border-red-400/50';
-      const icon = passes ? '<i class="fas fa-check-circle"></i> PASA' : '<i class="fas fa-times-circle"></i> NO PASA';
-      const conclusionText = passes 
-        ? 'Se acepta $H_0$ al nivel de significancia dado. La secuencia <b>cumple</b> con la propiedad matemática.' 
-        : 'Se rechaza $H_0$. La secuencia <b>fracasa</b> matemáticamente en cumplir la propiedad analizada.';
 
       return `
-        <div class="glass rounded-xl p-5 flex flex-col gap-4 relative border-l-4 border-t border-r border-b border-white/5 ${border} shadow-lg overflow-hidden">
+        <div class="glass rounded-lg p-4 flex flex-col gap-3 relative border-l-4 border-t border-r border-b border-white/5 ${border} shadow-sm overflow-hidden">
           
           <div class="flex justify-between items-start z-10">
-            <div class="pr-24">
-              <h3 class="text-base font-bold text-white mb-1">${title}</h3>
-              <p class="text-xs text-gray-400 leading-relaxed">${subtitle}</p>
+            <div class="pr-20">
+              <h3 class="text-sm font-bold text-white mb-0.5">${title}</h3>
+              <p class="text-[11px] text-gray-400 leading-relaxed">${subtitle}</p>
             </div>
-            <div class="absolute top-4 right-4 ${color} ${bg} px-4 py-1.5 text-xs font-black uppercase tracking-wider rounded-full shadow-sm border ${border}">
+            <div class="absolute top-3 right-3 ${color} ${bg} px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded border ${border}">
               ${passes ? 'PASA' : 'NO PASA'}
             </div>
           </div>
           
-          <div class="bg-indigo-900/30 rounded-lg p-3 border border-indigo-500/20 mt-2 z-10">
-            <div class="text-[10px] text-indigo-300 font-bold uppercase tracking-widest mb-1 opacity-80"><i class="fas fa-balance-scale mr-1"></i> Hipótesis a Contrastar</div>
-            <div class="text-sm text-center py-2 text-white">
-              ${h0}
+          <div class="flex flex-col gap-2 mt-1 z-10">
+            <div class="bg-indigo-900/20 rounded px-3 py-2 border border-indigo-500/20">
+              <div class="text-[9px] text-indigo-300 font-bold uppercase tracking-widest mb-1 opacity-80">Hipótesis</div>
+              <div class="text-xs text-center text-white overflow-x-auto">${h0}</div>
+            </div>
+            
+            <div class="bg-black/30 rounded px-3 py-2 border border-white/5 flex flex-col justify-center">
+              <div class="text-[9px] text-gray-400 uppercase font-bold tracking-widest mb-1">Evaluación</div>
+              <div class="text-sm font-bold text-white text-center overflow-x-auto flex items-center justify-center gap-2">
+                ${evaluation}
+                <span class="${color} ml-1">${passes ? '<i class="fas fa-check"></i> Verdadero' : '<i class="fas fa-times"></i> Falso'}</span>
+              </div>
             </div>
           </div>
           
-          <details class="group bg-white/5 rounded-lg border border-white/10 z-10">
-            <summary class="text-xs font-semibold text-gray-300 p-3 cursor-pointer select-none flex justify-between items-center hover:bg-white/10 transition-colors">
-              <span><i class="fas fa-calculator mr-2 text-indigo-400"></i> Procedimiento Matemático Paso a Paso</span>
+          <details class="group bg-white/5 rounded-lg border border-white/10 z-10 mt-1">
+            <summary class="text-[11px] font-semibold text-gray-400 p-2.5 cursor-pointer select-none flex justify-between items-center hover:bg-white/10 transition-colors hover:text-gray-300">
+              <span><i class="fas fa-calculator mr-2 text-indigo-400"></i> Ver procedimiento matemático</span>
               <i class="fas fa-chevron-down transition-transform group-open:rotate-180 text-gray-500"></i>
             </summary>
-            <div class="p-4 border-t border-white/10 bg-black/40 text-sm">
-              <div class="mb-4">
-                <div class="text-[10px] text-gray-500 uppercase font-bold mb-1 tracking-widest">Fórmula Teórica (Modelo)</div>
-                <div class="overflow-x-auto text-white py-2">${formula ? formula : ''}</div>
+            <div class="p-3 border-t border-white/10 bg-black/40 text-xs">
+              <div class="mb-3">
+                <div class="text-[9px] text-gray-500 uppercase font-bold mb-1 tracking-widest">Fórmula Teórica</div>
+                <div class="overflow-x-auto text-white py-1">${formula ? formula : ''}</div>
               </div>
               <div class="mb-2">
-                <div class="text-[10px] text-gray-500 uppercase font-bold mb-1 tracking-widest">Sustitución de Valores Muestrales</div>
-                <div class="overflow-x-auto text-gray-300 py-2">${substitution ? substitution : ''}</div>
+                <div class="text-[9px] text-gray-500 uppercase font-bold mb-1 tracking-widest">Sustitución</div>
+                <div class="overflow-x-auto text-gray-300 py-1">${substitution ? substitution : ''}</div>
               </div>
               ${extraHtml || ''}
             </div>
           </details>
-
-          <div class="mt-2 bg-black/40 rounded-lg p-4 border border-white/10 text-center flex flex-col items-center justify-center z-10">
-            <div class="text-[10px] text-gray-400 uppercase font-bold mb-2 tracking-widest">Regla de Decisión Evaluada</div>
-            <div class="text-lg font-bold text-white mb-3">
-              ¿ ${evaluation} ?
-            </div>
-            <div class="inline-flex items-center gap-2 px-6 py-2 rounded-full ${bg} ${color} font-black tracking-wider text-sm border border-current shadow-[0_0_15px_rgba(0,0,0,0.5)]">
-              ${icon}
-            </div>
-          </div>
-          
-          <div class="text-[13px] font-medium text-gray-300 text-center mt-2 border-t border-white/5 pt-3 z-10">
-            <b>Conclusión:</b> ${conclusionText}
-          </div>
           
         </div>`;
     }
@@ -1681,20 +1671,28 @@
           <span class="ml-auto text-xs px-2 py-1 bg-white/5 rounded-md"><i class="fas fa-database text-gray-500 mr-1"></i> Fuente: ${source === 'generated' ? 'Generados' : 'Externa'}</span>
         </div>`;
       
+      let globalConclusions = [];
+      const addConcl = (name, passes, okMsg, failMsg) => {
+        globalConclusions.push({ name, passes, desc: passes ? okMsg : failMsg });
+      };
+
       // Renderizar Uniformidad
       if (catUniformity.length > 0) {
         html += `<div class="space-y-4">
-          <div class="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2"><i class="fas fa-scale-balanced"></i> Pruebas de Uniformidad</div>
+          <div class="text-xl font-bold text-gray-100 uppercase tracking-widest flex items-center gap-2"><i class="fas fa-scale-balanced"></i> Pruebas de Uniformidad</div>
           <div class="grid grid-cols-1 gap-6 max-w-5xl mx-auto">`;
         
         if (catUniformity.includes('mean')) {
            html += renderTestCard('Prueba de Medias', 'Verifica si el promedio muestral de la secuencia es estadísticamente igual al valor esperado de 0.5.', v.meanTest);
+           addConcl('Prueba de Medias', v.meanTest.passes, 'Se acepta $H_0$ al nivel de significancia dado.<br>La secuencia cumple con la propiedad matemática.', 'Se rechaza $H_0$.<br>El promedio muestral no es estadísticamente igual a 0.5.');
         }
         if (catUniformity.includes('variance')) {
            html += renderTestCard('Prueba de Varianza', 'Verifica si la varianza muestral de la secuencia es estadísticamente igual a la varianza esperada de 1/12.', v.varTest);
+           addConcl('Prueba de Varianza', v.varTest.passes, 'Se acepta $H_0$ al nivel de significancia dado.<br>La secuencia cumple con la propiedad matemática.', 'Se rechaza $H_0$.<br>La varianza muestral difiere de la esperada (1/12).');
         }
         if (catUniformity.includes('uniformity')) {
            html += renderTestCard('Prueba Chi-Cuadrada de Uniformidad', `Analiza si la distribución empírica de la secuencia en $m=${m}$ subintervalos se ajusta a una $U(0,1)$.`, v.chiTest);
+           addConcl('Chi-Cuadrada', v.chiTest.passes, 'Se acepta $H_0$.<br>La distribución empírica es estadísticamente uniforme.', 'Se rechaza $H_0$.<br>La secuencia no se distribuye de manera uniforme.');
         }
         html += `</div></div>`;
       }
@@ -1702,25 +1700,54 @@
       // Renderizar Independencia
       if (catIndependence.length > 0) {
         html += `<div class="space-y-4">
-          <div class="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2 mt-6"><i class="fas fa-arrows-split-up-and-left"></i> Pruebas de Independencia</div>
+          <div class="text-xl font-bold text-gray-100 uppercase tracking-widest flex items-center gap-2 mt-6"><i class="fas fa-arrows-split-up-and-left"></i> Pruebas de Independencia</div>
           <div class="grid grid-cols-1 gap-6 max-w-5xl mx-auto">`;
           
         if (catIndependence.includes('runs_updown')) {
            html += renderTestCard('Corridas Arriba y Abajo', `Evalúa la tendencia de crecimiento o decrecimiento entre números consecutivos para descartar patrones de dependencia.`, v.runsTest);
+           addConcl('Corridas Arriba y Abajo', v.runsTest.passes, 'Se acepta $H_0$.<br>La secuencia puede considerarse independiente.', 'Se rechaza $H_0$.<br>Existen patrones de dependencia en el crecimiento/decrecimiento.');
         }
         if (catIndependence.includes('runs_mean')) {
            html += renderTestCard('Corridas Arriba y Abajo de la Media', `Evalúa la alternancia de los números por encima y por debajo de la media teórica $\\mu=0.5$.`, v.runsMeanTest);
+           addConcl('Corridas de la Media', v.runsMeanTest.passes, 'Se acepta $H_0$.<br>La secuencia cumple la propiedad de independencia.', 'Se rechaza $H_0$.<br>Se detectaron patrones dependientes respecto a la media.');
         }
         if (catIndependence.includes('poker')) {
            html += renderTestCard('Prueba de Póker', `Comprueba la aparición aleatoria de patrones numéricos simulando manos de póker.`, v.pokerTest);
+           addConcl('Prueba de Póker', v.pokerTest.passes, 'Se acepta $H_0$.<br>Los patrones numéricos aparecen de forma aleatoria.', 'Se rechaza $H_0$.<br>La secuencia no cumple con el patrón de aleatoriedad esperado.');
         }
         if (catIndependence.includes('series')) {
            html += renderTestCard('Prueba de Series', `Verifica la independencia emparejando números consecutivos como coordenadas en $m \\times m$ subcuadrantes.`, v.seriesTest);
+           addConcl('Prueba de Series', v.seriesTest.passes, 'Se acepta $H_0$.<br>Los datos muestran independencia en pares coordenados.', 'Se rechaza $H_0$.<br>Existe correlación detectada entre números consecutivos.');
         }
         if (catIndependence.includes('gaps')) {
            html += renderTestCard('Prueba de Huecos', `Estudia la longitud de secuencias consecutivas que no caen dentro del intervalo $[0, 0.5]$.`, v.gapsTest);
+           addConcl('Prueba de Huecos', v.gapsTest.passes, 'Se acepta $H_0$.<br>La distribución de huecos indica independencia.', 'Se rechaza $H_0$.<br>La secuencia presenta patrones de dependencia entre huecos.');
         }
         html += `</div></div>`;
+      }
+      
+      // Resumen de Conclusiones
+      if (globalConclusions.length > 0) {
+        html += `<div class="mt-12 mb-6">
+          <div class="glass rounded-xl p-6 border-t-4 border-indigo-500/50 bg-indigo-900/10 shadow-lg max-w-5xl mx-auto">
+            <h3 class="text-base font-bold text-white mb-4 uppercase tracking-widest flex items-center gap-2"><i class="fas fa-clipboard-check text-indigo-400"></i> Resumen de Conclusiones</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+            
+        globalConclusions.forEach((c, index) => {
+          const color = c.passes ? 'text-green-400' : 'text-red-400';
+          const icon = c.passes ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-times-circle"></i>';
+          html += `
+            <div class="bg-black/30 rounded-lg p-4 border border-white/5 flex gap-3 items-start hover:bg-white/5 transition-colors">
+              <div class="mt-0.5 ${color} text-lg">${icon}</div>
+              <div>
+                <div class="text-[11px] font-bold text-gray-300 uppercase tracking-widest mb-1.5">${index + 1}. ${c.name}</div>
+                <div class="text-xs text-gray-400 leading-relaxed">${c.desc}</div>
+              </div>
+            </div>
+          `;
+        });
+            
+        html += `</div></div></div>`;
       }
       
       html += `</div>`;
