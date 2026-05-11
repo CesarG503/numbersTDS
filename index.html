@@ -643,17 +643,20 @@
     function loadExercises(data) {
       if (!Array.isArray(data)) return showError('El JSON debe ser un arreglo de ejercicios');
       exercises = data.map((item, idx) => {
-        const method = normalizeMethod(item.method);
-        const methodInfo = METHODS[method];
-        const family = methodInfo ? methodInfo.family : null;
+        const type = item.type || (item.method ? (METHODS[normalizeMethod(item.method)]?.family === 'cg' ? 'Congruencial' : 'No Congruencial') : 'independence');
+        const method = item.method ? normalizeMethod(item.method) : null;
         return {
           id: item.id || `ej-${idx + 1}`,
           title: item.title || `Ejercicio ${idx + 1}`,
-          type: item.type || (family === 'cg' ? 'Congruencial' : family === 'nc' ? 'No Congruencial' : 'Método desconocido'),
+          type,
           method,
-          n: item.n || 10,
+          n: item.n || (item.numbers ? item.numbers.length : 10),
           parameters: item.parameters || {},
           description: item.description || '',
+          numbers: item.numbers || [],
+          alpha: item.alpha || 0.05,
+          m: item.m || 10,
+          tests: item.tests || []
         };
       });
       selectedExerciseId = null;
@@ -676,7 +679,7 @@
             <span class="font-semibold">${ex.title}</span>
             <span class="text-[11px] uppercase px-2 py-1 rounded-full bg-slate-800 text-slate-300">${ex.type}</span>
           </div>
-          <div class="text-xs text-gray-400 mt-1">${METHODS[ex.method]?.label || ex.method}</div>
+          <div class="text-xs text-gray-400 mt-1">${ex.type === 'independence' ? 'Pruebas de Independencia' : (METHODS[ex.method]?.label || ex.method)}</div>
         </button>
       `).join('');
     }
@@ -684,12 +687,18 @@
     function selectExercise(id) {
       const exercise = exercises.find(e => e.id === id);
       if (!exercise) return;
-      if (!METHODS[exercise.method]) return showError(`Método desconocido: ${exercise.method}`);
       selectedExerciseId = id;
       renderExerciseList();
-      applyExercise(exercise);
-      renderExerciseDetail(exercise);
-      generate(); // Procesar automáticamente el ejercicio seleccionado
+      
+      if (exercise.type === 'independence') {
+        renderExerciseDetail(exercise);
+        applyIndependenceExercise(exercise);
+      } else {
+        if (!METHODS[exercise.method]) return showError(`Método desconocido: ${exercise.method}`);
+        applyExercise(exercise);
+        renderExerciseDetail(exercise);
+        generate(); // Procesar automáticamente el ejercicio seleccionado
+      }
     }
 
     function mapParameterKey(key, method) {
@@ -731,18 +740,40 @@
       });
     }
 
+    function applyIndependenceExercise(exercise) {
+      if (!exercise.numbers || exercise.numbers.length === 0) {
+        showValidationMessage('Este ejercicio requiere que recolectes y proporciones los números primero.');
+        document.getElementById('external-numbers').value = '';
+        return;
+      }
+      document.getElementById('validation-source').value = 'external';
+      toggleValidationSource();
+      document.getElementById('external-numbers').value = exercise.numbers.join(', ');
+      document.getElementById('validation-alpha').value = exercise.alpha * 100;
+      document.getElementById('validation-m').value = exercise.m;
+      window._currentExerciseTests = exercise.tests || [];
+      renderValidation();
+    }
+
     function renderExerciseDetail(exercise) {
       const detail = document.getElementById('exercise-detail');
       detail.classList.remove('hidden');
+      let paramsHtml = '';
+      if (exercise.type !== 'independence') {
+        paramsHtml = `<div class="text-xs mt-2 text-gray-400"><span class="font-semibold">Parámetros:</span></div>
+        <pre class="text-xs p-3 rounded-xl bg-slate-950/70 text-slate-200 overflow-x-auto">${JSON.stringify(exercise.parameters, null, 2)}</pre>`;
+      } else {
+         paramsHtml = `<div class="text-xs mt-2 text-gray-400"><span class="font-semibold">Pruebas a realizar:</span> ${exercise.tests.join(', ')}</div>`;
+      }
+      
       detail.innerHTML = `
         <div class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Ejercicio seleccionado</div>
         <div class="mb-2"><span class="font-semibold">Título:</span> ${exercise.title}</div>
         <div class="mb-2"><span class="font-semibold">Tipo:</span> ${exercise.type}</div>
-        <div class="mb-2"><span class="font-semibold">Método:</span> ${METHODS[exercise.method]?.label || exercise.method}</div>
-        <div class="mb-2"><span class="font-semibold">Iteraciones:</span> ${exercise.n}</div>
+        <div class="mb-2"><span class="font-semibold">Método/Prueba:</span> ${exercise.type === 'independence' ? 'Independencia' : (METHODS[exercise.method]?.label || exercise.method)}</div>
+        <div class="mb-2"><span class="font-semibold">Tamaño (n):</span> ${exercise.n}</div>
         <div class="mb-2"><span class="font-semibold">Descripción:</span> ${exercise.description || 'Sin descripción'}</div>
-        <div class="text-xs mt-2 text-gray-400"><span class="font-semibold">Parámetros:</span></div>
-        <pre class="text-xs p-3 rounded-xl bg-slate-950/70 text-slate-200 overflow-x-auto">${JSON.stringify(exercise.parameters, null, 2)}</pre>
+        ${paramsHtml}
       `;
     }
 
@@ -1120,33 +1151,35 @@
     // VALIDACIÓN ESTADÍSTICA
     // =============================================================
 
-    // Función para calcular Z-score
-    function zScore(alpha) {
-      // Aproximación para alpha/2
-      const z = { 0.01: 2.576, 0.05: 1.96, 0.10: 1.645 }[alpha] || 1.96;
-      return z;
+    // Aproximación racional AS 111 para la Inversa de la Normal Estándar
+    function pnormInv(p) {
+      if (p <= 0) return -Infinity;
+      if (p >= 1) return Infinity;
+      let t, v;
+      if (p < 0.5) t = Math.sqrt(-2.0 * Math.log(p));
+      else t = Math.sqrt(-2.0 * Math.log(1 - p));
+      v = t - (2.515517 + 0.802853 * t + 0.010328 * t * t) / (1.0 + 1.432788 * t + 0.189269 * t * t + 0.001308 * t * t * t);
+      return p < 0.5 ? -v : v;
     }
 
-    // Función para calcular chi-cuadrado inverso (aproximación simple)
-    function chiSquareInv(df, alpha) {
-      // Aproximaciones simples para df común
-      if (df === 1) return alpha === 0.05 ? 3.841 : alpha === 0.01 ? 6.635 : 2.706;
-      if (df === 5) return alpha === 0.05 ? 11.07 : alpha === 0.01 ? 15.09 : 9.236;
-      if (df === 10) return alpha === 0.05 ? 18.31 : alpha === 0.01 ? 23.21 : 15.99;
-      // Para otros, aproximación básica
-      return df + Math.sqrt(2 * df) * zScore(alpha);
+    // Transformación de Wilson-Hilferty para Inversa Chi-Cuadrada
+    function chiSquareInv(df, p) {
+      // p = área de la cola derecha = alpha
+      const z = pnormInv(1 - p);
+      return df * Math.pow(1 - (2 / (9 * df)) + z * Math.sqrt(2 / (9 * df)), 3);
     }
 
     // Prueba de Medias
     function testMean(rValues, alpha) {
       const n = rValues.length;
       const mean = rValues.reduce((a, b) => a + b, 0) / n;
-      const z = zScore(alpha / 2);
-      const se = Math.sqrt(1 / (12 * n)); // Para uniforme [0,1], var = 1/12
-      const li = 0.5 - z * se;
-      const ls = 0.5 + z * se;
+      const zCritical = pnormInv(1 - alpha / 2);
+      const se = Math.sqrt(1 / (12 * n));
+      const li = 0.5 - zCritical * se;
+      const ls = 0.5 + zCritical * se;
+      const zCalc = (mean - 0.5) / se;
       const passes = mean >= li && mean <= ls;
-      return { mean, li, ls, passes };
+      return { mean, li, ls, zCalc, zCritical, passes, n };
     }
 
     // Prueba de Varianza
@@ -1159,7 +1192,8 @@
       const varLi = chiLi / (12 * (n - 1));
       const varLs = chiLs / (12 * (n - 1));
       const passes = variance >= varLi && variance <= varLs;
-      return { variance, varLi, varLs, passes };
+      const chiCalc = 12 * (n - 1) * variance;
+      return { variance, varLi, varLs, chiCalc, chiLi, chiLs, passes, df: n - 1 };
     }
 
     // Prueba Chi-cuadrada para Uniformidad
@@ -1175,12 +1209,13 @@
       const df = m - 1;
       const critical = chiSquareInv(df, alpha);
       const passes = chiSquare <= critical;
-      return { chiSquare, critical, passes, bins };
+      return { chiSquare, critical, passes, df, expected };
     }
 
     // Prueba de Corridas Arriba y Abajo
     function testRuns(rValues, alpha) {
       const n = rValues.length;
+      if (n < 2) return { runs: 0, passes: false, n };
       const signs = [];
       for (let i = 1; i < n; i++) {
         signs.push(rValues[i] > rValues[i - 1] ? 1 : 0);
@@ -1189,46 +1224,232 @@
       for (let i = 1; i < signs.length; i++) {
         if (signs[i] !== signs[i - 1]) runs++;
       }
-      const n1 = signs.filter(s => s === 1).length;
-      const n2 = signs.length - n1;
-      const meanRuns = (2 * n1 * n2) / (n1 + n2) + 1;
-      const varRuns = (2 * n1 * n2 * (2 * n1 * n2 - n1 - n2)) / ((n1 + n2) ** 2 * (n1 + n2 - 1));
+      const meanRuns = (2 * n - 1) / 3;
+      const varRuns = (16 * n - 29) / 90;
       const z = (runs - meanRuns) / Math.sqrt(varRuns);
-      const zCritical = zScore(alpha / 2);
+      const zCritical = pnormInv(1 - alpha / 2);
       const passes = Math.abs(z) <= zCritical;
-      return { runs, meanRuns, z, passes };
+      return { runs, meanRuns, varRuns, z, zCritical, passes, n };
     }
 
-    // Prueba Póker (para 3, 4, 5 decimales)
-    function testPoker(rValues, digits, alpha) {
+    // Prueba de Corridas Arriba y Abajo de la Media
+    function testRunsMean(rValues, alpha) {
       const n = rValues.length;
-      const categories = {};
+      const mean = 0.5; // Comparación teórica U(0,1)
+      const signs = [];
+      rValues.forEach(r => signs.push(r >= mean ? 1 : 0));
+      let runs = 1;
+      for (let i = 1; i < signs.length; i++) {
+        if (signs[i] !== signs[i - 1]) runs++;
+      }
+      const n1 = signs.filter(s => s === 1).length;
+      const n2 = signs.length - n1;
+      const total = n1 + n2;
+      if (total < 2 || n1 === 0 || n2 === 0) return { runs: 0, passes: false, n };
+      
+      const meanRuns = (2 * n1 * n2) / total + 1;
+      const varRuns = (2 * n1 * n2 * (2 * n1 * n2 - total)) / ((total ** 2) * (total - 1));
+      const z = (runs - meanRuns) / Math.sqrt(varRuns);
+      const zCritical = pnormInv(1 - alpha / 2);
+      const passes = Math.abs(z) <= zCritical;
+      return { runs, meanRuns, varRuns, z, zCritical, passes, n1, n2, n };
+    }
+
+    // Prueba Póker (5 decimales) - Académico
+    function testPokerAcademic(rValues, m, alpha) {
+      const n = rValues.length;
+      const d = 5;
+      const categories = { all_diff: 0, pair: 0, two_pairs: 0, three_of_a_kind: 0, full_house: 0, four_of_a_kind: 0, five_of_a_kind: 0 };
+      
       rValues.forEach(r => {
-        const str = r.toFixed(digits).substring(2); // Ignorar '0.'
-        const unique = new Set(str.split('')).size;
-        const key = unique === digits ? 'all_diff' : unique === 1 ? 'all_same' : unique === digits - 1 ? 'pair' : 'other';
-        categories[key] = (categories[key] || 0) + 1;
+        const str = r.toFixed(d).substring(2).padEnd(d, '0');
+        const counts = {};
+        for (let char of str) counts[char] = (counts[char] || 0) + 1;
+        const vals = Object.values(counts).sort((a,b)=>b-a);
+        
+        if (vals[0] === 5) categories.five_of_a_kind++;
+        else if (vals[0] === 4) categories.four_of_a_kind++;
+        else if (vals[0] === 3 && vals[1] === 2) categories.full_house++;
+        else if (vals[0] === 3) categories.three_of_a_kind++;
+        else if (vals[0] === 2 && vals[1] === 2) categories.two_pairs++;
+        else if (vals[0] === 2) categories.pair++;
+        else categories.all_diff++;
       });
-      // Para simplificar, calcular chi-square con categorías esperadas uniformes
-      const numCats = Object.keys(categories).length;
-      const expected = n / numCats;
-      const chiSquare = Object.values(categories).reduce((sum, obs) => sum + ((obs - expected) ** 2) / expected, 0);
-      const df = numCats - 1;
+      
+      const probs = { all_diff: 0.3024, pair: 0.5040, two_pairs: 0.1080, three_of_a_kind: 0.0720, full_house: 0.0090, four_of_a_kind: 0.0045, five_of_a_kind: 0.0001 };
+      
+      let expecteds = [];
+      let observeds = [];
+      for (const [key, p] of Object.entries(probs)) {
+         expecteds.push(n * p);
+         observeds.push(categories[key]);
+      }
+      
+      let finalExp = [];
+      let finalObs = [];
+      let tempExp = 0;
+      let tempObs = 0;
+      for (let i = expecteds.length - 1; i >= 0; i--) {
+        tempExp += expecteds[i];
+        tempObs += observeds[i];
+        if (tempExp >= 5 || i === 0) {
+          finalExp.unshift(tempExp);
+          finalObs.unshift(tempObs);
+          tempExp = 0;
+          tempObs = 0;
+        }
+      }
+      if (finalExp.length > 1 && finalExp[0] < 5) {
+         finalExp[1] += finalExp[0];
+         finalObs[1] += finalObs[0];
+         finalExp.shift();
+         finalObs.shift();
+      }
+
+      let chiSquare = 0;
+      for (let i = 0; i < finalExp.length; i++) {
+        chiSquare += Math.pow(finalObs[i] - finalExp[i], 2) / finalExp[i];
+      }
+      const df = Math.max(1, finalExp.length - 1);
       const critical = chiSquareInv(df, alpha);
       const passes = chiSquare <= critical;
-      return { chiSquare, critical, passes, categories };
+      return { chiSquare, critical, passes, df, n };
+    }
+
+    // Prueba de Series
+    function testSeries(rValues, m, alpha) {
+      const n = rValues.length;
+      const N = n - 1;
+      const matrix = Array.from({length: m}, () => Array(m).fill(0));
+      
+      for (let i = 0; i < N; i++) {
+        const r1 = rValues[i];
+        const r2 = rValues[i+1];
+        const row = Math.min(Math.floor(r1 * m), m - 1);
+        const col = Math.min(Math.floor(r2 * m), m - 1);
+        matrix[row][col]++;
+      }
+      
+      let sumSquares = 0;
+      for (let i = 0; i < m; i++) {
+        for (let j = 0; j < m; j++) {
+          sumSquares += matrix[i][j] ** 2;
+        }
+      }
+      
+      const chiSquare = ((m * m) / N) * sumSquares - N;
+      const df = (m * m) - 1;
+      const critical = chiSquareInv(df, alpha);
+      const passes = chiSquare <= critical;
+      return { chiSquare, critical, passes, df, m, N };
+    }
+
+    // Prueba de Huecos (Gaps Test) en el intervalo [0, 0.5]
+    function testGaps(rValues, alpha) {
+      const n = rValues.length;
+      const a = 0.0, b = 0.5;
+      const P = b - a;
+      let gaps = [];
+      let currentGap = 0;
+      let inGap = false;
+      
+      for (let i = 0; i < n; i++) {
+        if (rValues[i] >= a && rValues[i] <= b) {
+          if (inGap) gaps.push(currentGap);
+          currentGap = 0;
+          inGap = true;
+        } else {
+          if (inGap) currentGap++;
+        }
+      }
+      
+      const nGaps = gaps.length;
+      if (nGaps === 0) return { passes: false, error: "No se encontraron huecos en [0, 0.5]", n };
+      
+      let maxGap = Math.max(...gaps);
+      let freqs = new Array(maxGap + 1).fill(0);
+      for (let g of gaps) freqs[g]++;
+      
+      let expecteds = [];
+      let observeds = [];
+      for (let i = 0; i <= maxGap + 1; i++) {
+        let prob = i <= maxGap ? P * Math.pow(1 - P, i) : Math.pow(1 - P, maxGap + 1);
+        expecteds.push(nGaps * prob);
+        observeds.push(i <= maxGap ? freqs[i] : 0);
+      }
+      
+      let finalExp = [];
+      let finalObs = [];
+      let tempExp = 0;
+      let tempObs = 0;
+      for (let i = expecteds.length - 1; i >= 0; i--) {
+        tempExp += expecteds[i];
+        tempObs += observeds[i];
+        if (tempExp >= 5 || i === 0) {
+          finalExp.unshift(tempExp);
+          finalObs.unshift(tempObs);
+          tempExp = 0;
+          tempObs = 0;
+        }
+      }
+      if (finalExp.length > 1 && finalExp[0] < 5) {
+         finalExp[1] += finalExp[0];
+         finalObs[1] += finalObs[0];
+         finalExp.shift();
+         finalObs.shift();
+      }
+      
+      let chiSquare = 0;
+      for (let i = 0; i < finalExp.length; i++) {
+        chiSquare += Math.pow(finalObs[i] - finalExp[i], 2) / finalExp[i];
+      }
+      
+      const df = Math.max(1, finalExp.length - 1);
+      const critical = chiSquareInv(df, alpha);
+      const passes = chiSquare <= critical;
+      
+      return { chiSquare, critical, passes, df, nGaps, n };
     }
 
     // Ejecutar todas las pruebas
     function runValidation(rValues, alpha, m) {
-      const meanTest = testMean(rValues, alpha);
-      const varTest = testVariance(rValues, alpha);
-      const chiTest = testChiSquare(rValues, m, alpha);
-      const runsTest = testRuns(rValues, alpha);
-      const poker3 = testPoker(rValues, 3, alpha);
-      const poker4 = testPoker(rValues, 4, alpha);
-      const poker5 = testPoker(rValues, 5, alpha);
-      return { meanTest, varTest, chiTest, runsTest, poker3, poker4, poker5 };
+      return {
+        meanTest: testMean(rValues, alpha),
+        varTest: testVariance(rValues, alpha),
+        chiTest: testChiSquare(rValues, m, alpha),
+        runsTest: testRuns(rValues, alpha),
+        runsMeanTest: testRunsMean(rValues, alpha),
+        pokerTest: testPokerAcademic(rValues, m, alpha),
+        seriesTest: testSeries(rValues, m, alpha),
+        gapsTest: testGaps(rValues, alpha)
+      };
+    }
+
+    // Renderizar tarjeta de prueba
+    function renderTestCard(title, subtitle, h0, formula, substitute, decision, isPassing) {
+      const color = isPassing ? 'text-green-400' : 'text-red-400';
+      const bg = isPassing ? 'bg-green-400/10' : 'bg-red-400/10';
+      const border = isPassing ? 'border-green-400/30' : 'border-red-400/30';
+      
+      return `
+        <div class="glass rounded-xl p-4 flex flex-col gap-3 relative border-l-4 ${border}">
+          <div class="absolute top-4 right-4 ${color} ${bg} px-3 py-1 text-[11px] font-bold uppercase tracking-wide rounded-full">
+            ${isPassing ? 'Pasa' : 'No Pasa'}
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-white">${title}</div>
+            <div class="text-xs text-gray-400 mt-1">${subtitle}</div>
+          </div>
+          <div class="text-xs text-indigo-300 font-mono bg-indigo-900/20 p-2 rounded">${h0}</div>
+          <div class="text-[11px] text-gray-500 font-mono leading-relaxed space-y-1">
+            <div><span class="text-gray-400">Fórmula:</span> ${formula}</div>
+            <div><span class="text-gray-400">Valores:</span> ${substitute}</div>
+            <div><span class="text-gray-400">Decisión:</span> ${decision}</div>
+          </div>
+          <div class="text-xs font-semibold ${color} mt-1 border-t border-white/5 pt-3">
+            Conclusión: ${isPassing ? 'Se acepta H0. La secuencia cumple con la propiedad.' : 'Se rechaza H0. La secuencia no cumple con la propiedad.'}
+          </div>
+        </div>`;
     }
 
     // Renderizar validación
@@ -1256,49 +1477,124 @@
           return;
         }
       }
-      const validation = runValidation(rValues, alpha, m);
-      const html = `
-        <div class="space-y-4">
-          <div class="text-sm text-gray-400">α = ${alpha}, m = ${m}, Fuente: ${source === 'generated' ? 'Generados' : 'Externa'} (${rValues.length} números)</div>
-          <div class="grid grid-cols-1 gap-3">
-            <div class="stat-card">
-              <div class="text-xs text-gray-500 mb-1">Prueba de Medias</div>
-              <div class="text-sm">Promedio: ${validation.meanTest.mean.toFixed(4)} | Límites: [${validation.meanTest.li.toFixed(4)}, ${validation.meanTest.ls.toFixed(4)}]</div>
-              <div class="text-lg font-bold ${validation.meanTest.passes ? 'text-green-400' : 'text-red-400'}">${validation.meanTest.passes ? 'Pasa' : 'No Pasa'}</div>
-            </div>
-            <div class="stat-card">
-              <div class="text-xs text-gray-500 mb-1">Prueba de Varianza</div>
-              <div class="text-sm">Varianza: ${validation.varTest.variance.toFixed(4)} | Límites: [${validation.varTest.varLi.toFixed(4)}, ${validation.varTest.varLs.toFixed(4)}]</div>
-              <div class="text-lg font-bold ${validation.varTest.passes ? 'text-green-400' : 'text-red-400'}">${validation.varTest.passes ? 'Pasa' : 'No Pasa'}</div>
-            </div>
-            <div class="stat-card">
-              <div class="text-xs text-gray-500 mb-1">Chi-cuadrada (Uniformidad)</div>
-              <div class="text-sm">χ²: ${validation.chiTest.chiSquare.toFixed(4)} | Crítico: ${validation.chiTest.critical.toFixed(4)}</div>
-              <div class="text-lg font-bold ${validation.chiTest.passes ? 'text-green-400' : 'text-red-400'}">${validation.chiTest.passes ? 'Pasa' : 'No Pasa'}</div>
-            </div>
-            <div class="stat-card">
-              <div class="text-xs text-gray-500 mb-1">Corridas Arriba/Abajo</div>
-              <div class="text-sm">Corridas: ${validation.runsTest.runs} | Z: ${validation.runsTest.z.toFixed(4)}</div>
-              <div class="text-lg font-bold ${validation.runsTest.passes ? 'text-green-400' : 'text-red-400'}">${validation.runsTest.passes ? 'Pasa' : 'No Pasa'}</div>
-            </div>
-            <div class="stat-card">
-              <div class="text-xs text-gray-500 mb-1">Póker (3 decimales)</div>
-              <div class="text-sm">χ²: ${validation.poker3.chiSquare.toFixed(4)} | Crítico: ${validation.poker3.critical.toFixed(4)}</div>
-              <div class="text-lg font-bold ${validation.poker3.passes ? 'text-green-400' : 'text-red-400'}">${validation.poker3.passes ? 'Pasa' : 'No Pasa'}</div>
-            </div>
-            <div class="stat-card">
-              <div class="text-xs text-gray-500 mb-1">Póker (4 decimales)</div>
-              <div class="text-sm">χ²: ${validation.poker4.chiSquare.toFixed(4)} | Crítico: ${validation.poker4.critical.toFixed(4)}</div>
-              <div class="text-lg font-bold ${validation.poker4.passes ? 'text-green-400' : 'text-red-400'}">${validation.poker4.passes ? 'Pasa' : 'No Pasa'}</div>
-            </div>
-            <div class="stat-card">
-              <div class="text-xs text-gray-500 mb-1">Póker (5 decimales)</div>
-              <div class="text-sm">χ²: ${validation.poker5.chiSquare.toFixed(4)} | Crítico: ${validation.poker5.critical.toFixed(4)}</div>
-              <div class="text-lg font-bold ${validation.poker5.passes ? 'text-green-400' : 'text-red-400'}">${validation.poker5.passes ? 'Pasa' : 'No Pasa'}</div>
-            </div>
-          </div>
-        </div>
-      `;
+      
+      const v = runValidation(rValues, alpha, m);
+      const testsToRun = window._currentExerciseTests || [];
+      const filterMode = testsToRun.length > 0;
+      const catUniformity = filterMode ? testsToRun.filter(t => ['mean', 'variance', 'uniformity'].includes(t)) : ['mean', 'variance', 'uniformity'];
+      const catIndependence = filterMode ? testsToRun.filter(t => ['runs_updown', 'runs_mean', 'poker', 'series', 'gaps'].includes(t)) : ['runs_updown', 'runs_mean', 'poker', 'series', 'gaps'];
+      
+      let html = `<div class="space-y-6">
+        <div class="text-sm text-gray-400 flex flex-wrap items-center gap-4 border-b border-white/10 pb-3">
+          <span><i class="fas fa-percent text-indigo-400 mr-1"></i> α = ${alpha}</span>
+          <span><i class="fas fa-layer-group text-teal-400 mr-1"></i> m = ${m}</span>
+          <span><i class="fas fa-list-ol text-amber-400 mr-1"></i> ${rValues.length} números</span>
+          <span class="ml-auto text-xs px-2 py-1 bg-white/5 rounded-md"><i class="fas fa-database text-gray-500 mr-1"></i> Fuente: ${source === 'generated' ? 'Generados' : 'Externa'}</span>
+        </div>`;
+      
+      // Renderizar Uniformidad
+      if (catUniformity.length > 0) {
+        html += `<div class="space-y-4">
+          <div class="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2"><i class="fas fa-scale-balanced"></i> Pruebas de Uniformidad</div>
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">`;
+        
+        if (catUniformity.includes('mean')) {
+           const d = v.meanTest;
+           html += renderTestCard('Prueba de Medias', 'Verifica que el promedio de la secuencia sea estadísticamente igual a 0.5',
+             'H0: μ = 0.5',
+             'LI = 0.5 - Z_(α/2) * (1/√(12n)), LS = 0.5 + Z_(α/2) * (1/√(12n))',
+             `LI = ${d.li.toFixed(4)}, LS = ${d.ls.toFixed(4)}, x̄ = ${d.mean.toFixed(4)}`,
+             `¿ ${d.li.toFixed(4)} ≤ ${d.mean.toFixed(4)} ≤ ${d.ls.toFixed(4)} ?`,
+             d.passes);
+        }
+        if (catUniformity.includes('variance')) {
+           const d = v.varTest;
+           html += renderTestCard('Prueba de Varianza', 'Verifica que la varianza de la secuencia sea estadísticamente igual a 1/12',
+             'H0: σ² = 1/12',
+             'LI = χ²_(1-α/2, n-1) / (12(n-1)), LS = χ²_(α/2, n-1) / (12(n-1))',
+             `LI = ${d.varLi.toFixed(4)}, LS = ${d.varLs.toFixed(4)}, s² = ${d.variance.toFixed(4)}`,
+             `¿ ${d.varLi.toFixed(4)} ≤ ${d.variance.toFixed(4)} ≤ ${d.varLs.toFixed(4)} ?`,
+             d.passes);
+        }
+        if (catUniformity.includes('uniformity')) {
+           const d = v.chiTest;
+           html += renderTestCard('Chi-Cuadrada de Uniformidad', `Evalúa la distribución en ${m} subintervalos (frec. esperada = ${d.expected.toFixed(2)})`,
+             `H0: r_i ~ U(0,1)`,
+             `χ² = Σ(O_i - E_i)² / E_i`,
+             `χ²_c = ${d.chiSquare.toFixed(4)}, χ²_(α, df=${d.df}) = ${d.critical.toFixed(4)}`,
+             `¿ ${d.chiSquare.toFixed(4)} ≤ ${d.critical.toFixed(4)} ?`,
+             d.passes);
+        }
+        html += `</div></div>`;
+      }
+      
+      // Renderizar Independencia
+      if (catIndependence.length > 0) {
+        html += `<div class="space-y-4">
+          <div class="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2 mt-4"><i class="fas fa-arrows-split-up-and-left"></i> Pruebas de Independencia</div>
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">`;
+          
+        if (catIndependence.includes('runs_updown')) {
+           const d = v.runsTest;
+           if (!d.runs) {
+             html += renderTestCard('Corridas Arriba y Abajo', 'Faltan datos', 'H0: r_i son independientes', '-', '-', '-', false);
+           } else {
+             html += renderTestCard('Corridas Arriba y Abajo', `Evalúa la secuencia de crecimiento y decrecimiento`,
+               `H0: r_i son independientes`,
+               `Z = (R - μ_R) / σ_R,  μ_R = (2n-1)/3,  σ_R = √((16n-29)/90)`,
+               `R = ${d.runs}, μ_R = ${d.meanRuns.toFixed(4)}, σ_R = ${Math.sqrt(d.varRuns).toFixed(4)}, Z_c = ${d.z.toFixed(4)}, Z_(α/2) = ${d.zCritical.toFixed(4)}`,
+               `¿ |${d.z.toFixed(4)}| ≤ ${d.zCritical.toFixed(4)} ?`,
+               d.passes);
+           }
+        }
+        if (catIndependence.includes('runs_mean')) {
+           const d = v.runsMeanTest;
+           if (!d.runs) {
+             html += renderTestCard('Corridas de la Media', 'Faltan datos', 'H0: r_i son independientes', '-', '-', '-', false);
+           } else {
+             html += renderTestCard('Corridas Arriba/Abajo de la Media', `Evalúa corridas respecto a μ = 0.5 (n1 = ${d.n1}, n2 = ${d.n2})`,
+               `H0: r_i son independientes`,
+               `Z = (R - μ_R) / σ_R`,
+               `R = ${d.runs}, μ_R = ${d.meanRuns.toFixed(4)}, Z_c = ${d.z.toFixed(4)}, Z_(α/2) = ${d.zCritical.toFixed(4)}`,
+               `¿ |${d.z.toFixed(4)}| ≤ ${d.zCritical.toFixed(4)} ?`,
+               d.passes);
+           }
+        }
+        if (catIndependence.includes('poker')) {
+           const d = v.pokerTest;
+           html += renderTestCard('Prueba de Póker', `Clasifica los números en patrones de 5 dígitos`,
+             `H0: r_i son independientes`,
+             `χ² = Σ(O_i - E_i)² / E_i (agrupación esperada ≥ 5)`,
+             `χ²_c = ${d.chiSquare.toFixed(4)}, χ²_(α, df=${d.df}) = ${d.critical.toFixed(4)}`,
+             `¿ ${d.chiSquare.toFixed(4)} ≤ ${d.critical.toFixed(4)} ?`,
+             d.passes);
+        }
+        if (catIndependence.includes('series')) {
+           const d = v.seriesTest;
+           html += renderTestCard('Prueba de Series', `Independencia de pares consecutivos en m=${d.m} subintervalos (n=${d.N} pares)`,
+             `H0: r_i son independientes`,
+             `χ² = (m²/N)*Σ(O_ij)² - N`,
+             `χ²_c = ${d.chiSquare.toFixed(4)}, χ²_(α, df=${d.df}) = ${d.critical.toFixed(4)}`,
+             `¿ ${d.chiSquare.toFixed(4)} ≤ ${d.critical.toFixed(4)} ?`,
+             d.passes);
+        }
+        if (catIndependence.includes('gaps')) {
+           const d = v.gapsTest;
+           if (d.error) {
+             html += renderTestCard('Prueba de Huecos', `Evaluación de huecos en el intervalo [0, 0.5]`, 'H0: r_i son independientes', '-', d.error, '-', false);
+           } else {
+             html += renderTestCard('Prueba de Huecos', `Evalúa longitud de huecos para [0, 0.5] (${d.nGaps} huecos)`,
+               `H0: r_i son independientes`,
+               `χ² = Σ(O_i - E_i)² / E_i (agrupación ≥ 5)`,
+               `χ²_c = ${d.chiSquare.toFixed(4)}, χ²_(α, df=${d.df}) = ${d.critical.toFixed(4)}`,
+               `¿ ${d.chiSquare.toFixed(4)} ≤ ${d.critical.toFixed(4)} ?`,
+               d.passes);
+           }
+        }
+        html += `</div></div>`;
+      }
+      
+      html += `</div>`;
       document.getElementById('validation-results').innerHTML = html;
     }
 

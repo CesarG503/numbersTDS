@@ -1,0 +1,67 @@
+[
+  {
+    "id": "ej-13",
+    "title": "Ejercicio 13: Pruebas de Independencia",
+    "description": "Determinar mediante pruebas de independencia (corridas arriba/abajo, corridas de la media, póker, series o huecos) si los 100 números son pseudoaleatorios con alpha=0.10.",
+    "type": "independence",
+    "numbers": [
+      0.78, 0.98, 0.24, 0.73, 0.43, 0.16, 0.78, 0.47, 0.18, 0.55, 0.04, 0.29,
+      0.68, 0.77, 0.16, 0.03, 0.79, 0.22, 0.37, 0.8, 0.96, 0.26, 0.91, 0.55,
+      0.75, 0.55, 0.64, 0.39, 0.53, 0.45, 0.61, 0.14, 0.38, 0.12, 0.4, 0.74,
+      0.78, 0.98, 0.27, 0.6, 0.43, 0.67, 0.62, 0.32, 0.53, 0.54, 0.24, 0.29,
+      0.18, 0.08, 0.82, 0.94, 0.19, 0.98, 0.41, 1.0, 0.74, 0.92, 0.14, 0.43,
+      0.83, 0.88, 0.18, 0.21, 0.5, 0.13, 0.43, 0.69, 0.08, 0.12, 0.22, 0.5,
+      0.16, 0.11, 0.18, 0.89, 0.8, 0.42, 0.29, 0.87, 0.83, 0.79, 0.65, 0.28,
+      0.78, 0.49, 0.36, 0.86, 0.87, 0.64, 0.51, 0.07, 0.18, 0.94, 0.5, 0.22,
+      0.66, 0.91, 0.48, 0.24
+    ],
+    "alpha": 0.1,
+    "m": 10,
+    "tests": ["runs_updown", "runs_mean", "poker", "series", "gaps"]
+  },
+  {
+    "id": "ej-14",
+    "title": "Ejercicio 14: Directorio Telefónico",
+    "description": "Últimos 5 dígitos de 50 números telefónicos. Determinar aleatoriedad con alpha=0.05 mediante corridas arriba/abajo, corridas de la media y póker.",
+    "type": "independence",
+    "numbers": [
+      0.48372, 0.01945, 0.77218, 0.65039, 0.28471, 0.93056, 0.11807, 0.56422,
+      0.70193, 0.4458, 0.26714, 0.80933, 0.39021, 0.55678, 0.10294, 0.74831,
+      0.66205, 0.91472, 0.07318, 0.52869, 0.34017, 0.88562, 0.21904, 0.67158,
+      0.4923, 0.15083, 0.76329, 0.80451, 0.29766, 0.93814, 0.42109, 0.67532,
+      0.18947, 0.55028, 0.72061, 0.03485, 0.99812, 0.60273, 0.14795, 0.8632,
+      0.57146, 0.28039, 0.73658, 0.49127, 0.61504, 0.05273, 0.84419, 0.30968,
+      0.77701, 0.22653
+    ],
+    "alpha": 0.05,
+    "m": 10,
+    "tests": ["runs_updown", "runs_mean", "poker"]
+  },
+  {
+    "id": "ej-15",
+    "title": "Ejercicio 15: Placas de Automóviles",
+    "description": "Observar los 4 dígitos de placas de 100 automóviles. Determinar aleatoriedad con alpha=0.05 mediante corridas arriba/abajo, corridas de la media y series. NOTA: Datos deben ser recolectados por el usuario.",
+    "type": "independence",
+    "numbers": [],
+    "alpha": 0.05,
+    "m": 10,
+    "tests": ["runs_updown", "runs_mean", "series"]
+  },
+  {
+    "id": "ej-16",
+    "title": "Ejercicio 16: Corridas Arriba y Abajo",
+    "description": "Determinar con la prueba de corridas arriba y abajo si los 50 números son independientes con alpha=0.10.",
+    "type": "independence",
+    "numbers": [
+      0.6069, 0.5316, 0.5929, 0.4131, 0.2991, 0.6848, 0.8291, 0.1233, 0.2497,
+      0.9481, 0.4411, 0.8195, 0.3521, 0.8068, 0.1062, 0.5384, 0.9287, 0.7954,
+      0.7271, 0.5739, 0.4029, 0.2549, 0.1003, 0.5523, 0.1897, 0.8725, 0.4439,
+      0.6056, 0.831, 0.4709, 0.1926, 0.0266, 0.5696, 0.7504, 0.8542, 0.6045,
+      0.2269, 0.797, 0.3738, 0.1284, 0.6367, 0.9543, 0.5385, 0.2574, 0.2396,
+      0.3468, 0.4105, 0.5143, 0.2014, 0.99
+    ],
+    "alpha": 0.1,
+    "m": 10,
+    "tests": ["runs_updown"]
+  }
+]
