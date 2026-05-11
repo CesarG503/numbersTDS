@@ -25,10 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================================
 function selectMethod(method) {
   currentMethod = method;
-  document.getElementById('card-square').classList.toggle('selected',   method === 'square');
-  document.getElementById('card-product').classList.toggle('selected',  method === 'product');
+  document.getElementById('card-square').classList.toggle('selected', method === 'square');
+  document.getElementById('card-product').classList.toggle('selected', method === 'product');
   document.getElementById('card-constant').classList.toggle('selected', method === 'constant');
-  document.getElementById('seed1-container').style.display    = method === 'product'  ? 'block' : 'none';
+  document.getElementById('seed1-container').style.display = method === 'product' ? 'block' : 'none';
   document.getElementById('const-k-container').style.display = method === 'constant' ? 'block' : 'none';
   updateFormulaPanel();
   clearResults();
@@ -44,36 +44,36 @@ function updateFormulaPanel() {
     square: {
       color: '',
       formula1: 'Xᵢ₊₁ = Dígitos_Medios( Xᵢ² )',
-      formula2: 'rᵢ = Xᵢ / 10^d',
+      formula2: 'rᵢ = Xᵢ₊₁ / 10^d',
       steps: [
         'Elevar Xᵢ al cuadrado → Xᵢ²',
         'Expresar con 2d dígitos (ceros a la izquierda)',
         'Extraer los d dígitos centrales → Xᵢ₊₁',
-        'Calcular rᵢ = Xᵢ / 10^d',
+        'Calcular rᵢ = Xᵢ₊₁ / 10^d',
         'Repetir hasta ciclo o degeneración'
       ]
     },
     product: {
       color: 'violet',
       formula1: 'Xᵢ₊₁ = Dígitos_Medios( Xᵢ × Xᵢ₋₁ )',
-      formula2: 'rᵢ = Xᵢ / 10^d',
+      formula2: 'rᵢ = Xᵢ₊₁ / 10^d',
       steps: [
         'Multiplicar Xᵢ × Xᵢ₋₁',
         'Expresar el producto con 2d dígitos',
         'Extraer los d dígitos centrales → Xᵢ₊₁',
-        'Calcular rᵢ = Xᵢ / 10^d',
+        'Calcular rᵢ = Xᵢ₊₁ / 10^d',
         'Repetir hasta detectar ciclo'
       ]
     },
     constant: {
       color: 'teal',
       formula1: 'Xᵢ₊₁ = Dígitos_Medios( k × Xᵢ )',
-      formula2: 'rᵢ = Xᵢ / 10^d',
+      formula2: 'rᵢ = Xᵢ₊₁ / 10^d',
       steps: [
         'Multiplicar la constante k por Xᵢ',
         'Expresar el producto con 2d dígitos',
         'Extraer los d dígitos centrales → Xᵢ₊₁',
-        'Calcular rᵢ = Xᵢ / 10^d',
+        'Calcular rᵢ = Xᵢ₊₁ / 10^d',
         'Repetir hasta detectar ciclo'
       ]
     }
@@ -104,7 +104,7 @@ function updateFormulaPanel() {
 function extractMiddle(numStr, d) {
   // Aseguramos 2d dígitos (recortamos por la izquierda si excede, pero no debería)
   const padded = numStr.padStart(2 * d, '0').slice(-(2 * d));
-  const start  = Math.floor(d / 2);
+  const start = Math.floor(d / 2);
   const middle = padded.substring(start, start + d);
   return { padded, middle, start, end: start + d - 1 };
 }
@@ -113,10 +113,10 @@ function extractMiddle(numStr, d) {
 // ALGORITMO: CUADRADOS MEDIOS
 // ============================================================
 function generateMiddleSquare(seed0, d, maxIter) {
-  const steps  = [];
-  const seen   = new Map(); // xValue -> i (primer paso en que apareció)
-  const mod    = Math.pow(10, d);
-  let x        = seed0;
+  const steps = [];
+  const seen = new Map(); // xValue -> i (primer paso en que apareció)
+  const mod = Math.pow(10, d);
+  let x = seed0;
 
   for (let i = 0; i < maxIter; i++) {
     // Detección de ciclo
@@ -126,23 +126,27 @@ function generateMiddleSquare(seed0, d, maxIter) {
     }
     seen.set(x, i);
 
-    const squared  = BigInt(x) * BigInt(x);
+    const squared = BigInt(x) * BigInt(x);
     const squaredS = squared.toString();
-    const midInfo  = extractMiddle(squaredS, d);
-    const xNext    = parseInt(midInfo.middle, 10);
-    const r        = x / mod;
+    const midInfo = extractMiddle(squaredS, d);
+    const xNext = parseInt(midInfo.middle, 10);
+    const r = xNext / mod;
 
+    const xPad = x.toString().padStart(d, '0');
+    const xNextPad = xNext.toString().padStart(d, '0');
+    const rStr = r.toFixed(d + 2);
     steps.push({
       i,
       x,
-      xPad:      x.toString().padStart(d, '0'),
-      squared:   squaredS,
+      xPad,
+      squared: squaredS,
       midInfo,
       xNext,
-      xNextPad:  xNext.toString().padStart(d, '0'),
+      xNextPad,
       r,
-      rStr:      r.toFixed(d + 2),
-      isCycle:   false
+      rStr,
+      rExpr: `${xNextPad} / ${mod} = ${rStr}`,
+      isCycle: false
     });
 
     x = xNext;
@@ -162,10 +166,10 @@ function generateMiddleSquare(seed0, d, maxIter) {
 // ============================================================
 function generateMiddleProduct(seed0, seed1, d, maxIter) {
   const steps = [];
-  const seen  = new Map();
-  const mod   = Math.pow(10, d);
-  let xPrev   = seed0;
-  let xCurr   = seed1;
+  const seen = new Map();
+  const mod = Math.pow(10, d);
+  let xPrev = seed0;
+  let xCurr = seed1;
 
   for (let i = 0; i < maxIter; i++) {
     if (seen.has(xCurr)) {
@@ -178,25 +182,30 @@ function generateMiddleProduct(seed0, seed1, d, maxIter) {
     }
     seen.set(xCurr, i);
 
-    const product  = BigInt(xPrev) * BigInt(xCurr);
+    const product = BigInt(xPrev) * BigInt(xCurr);
     const productS = product.toString();
-    const midInfo  = extractMiddle(productS, d);
-    const xNext    = parseInt(midInfo.middle, 10);
-    const r        = xCurr / mod;
+    const midInfo = extractMiddle(productS, d);
+    const xNext = parseInt(midInfo.middle, 10);
+    const r = xNext / mod;
+
+    const xCurrPad = xCurr.toString().padStart(d, '0');
+    const xNextPad = xNext.toString().padStart(d, '0');
+    const rStr = r.toFixed(d + 2);
 
     steps.push({
       i,
       xPrev,
-      xPrevPad:  xPrev.toString().padStart(d, '0'),
+      xPrevPad: xPrev.toString().padStart(d, '0'),
       xCurr,
-      xCurrPad:  xCurr.toString().padStart(d, '0'),
-      product:   productS,
+      xCurrPad,
+      product: productS,
       midInfo,
       xNext,
-      xNextPad:  xNext.toString().padStart(d, '0'),
+      xNextPad,
       r,
-      rStr:      r.toFixed(d + 2),
-      isCycle:   false
+      rStr,
+      rExpr: `${xNextPad} / ${mod} = ${rStr}`,
+      isCycle: false
     });
 
     xPrev = xCurr;
@@ -223,9 +232,9 @@ function generateMiddleProduct(seed0, seed1, d, maxIter) {
  */
 function generateConstantMultiplier(seed0, k, d, maxIter) {
   const steps = [];
-  const seen  = new Map();  // xValue -> índice del paso
-  const mod   = Math.pow(10, d);
-  let x       = seed0;
+  const seen = new Map();  // xValue -> índice del paso
+  const mod = Math.pow(10, d);
+  let x = seed0;
 
   for (let i = 0; i < maxIter; i++) {
     // Detección de ciclo
@@ -235,25 +244,29 @@ function generateConstantMultiplier(seed0, k, d, maxIter) {
     }
     seen.set(x, i);
 
-    const product  = BigInt(k) * BigInt(x);
+    const product = BigInt(k) * BigInt(x);
     const productS = product.toString();
-    const midInfo  = extractMiddle(productS, d);
-    const xNext    = parseInt(midInfo.middle, 10);
-    const r        = x / mod;
+    const midInfo = extractMiddle(productS, d);
+    const xNext = parseInt(midInfo.middle, 10);
+    const r = xNext / mod;
 
+    const xPad = x.toString().padStart(d, '0');
+    const xNextPad = xNext.toString().padStart(d, '0');
+    const rStr = r.toFixed(d + 2);
     steps.push({
       i,
       x,
-      xPad:     x.toString().padStart(d, '0'),
+      xPad,
       k,
-      kPad:     k.toString().padStart(d, '0'),
-      product:  productS,
+      kPad: k.toString().padStart(d, '0'),
+      product: productS,
       midInfo,
       xNext,
-      xNextPad: xNext.toString().padStart(d, '0'),
+      xNextPad,
       r,
-      rStr:     r.toFixed(d + 2),
-      isCycle:  false
+      rStr,
+      rExpr: `${xNextPad} / ${mod} = ${rStr}`,
+      isCycle: false
     });
 
     x = xNext;
@@ -273,8 +286,8 @@ function generateConstantMultiplier(seed0, k, d, maxIter) {
 // ============================================================
 function highlightPadded(padded, start, end) {
   const before = `<span class="hl-dim">${padded.substring(0, start)}</span>`;
-  const mid    = `<span class="hl-middle">${padded.substring(start, end + 1)}</span>`;
-  const after  = `<span class="hl-dim">${padded.substring(end + 1)}</span>`;
+  const mid = `<span class="hl-middle">${padded.substring(start, end + 1)}</span>`;
+  const after = `<span class="hl-dim">${padded.substring(end + 1)}</span>`;
   return before + mid + after;
 }
 
@@ -284,9 +297,9 @@ function highlightPadded(padded, start, end) {
 // ============================================================
 function generate() {
   hideError();
-  const d       = parseInt(document.getElementById('input-digits').value, 10);
+  const d = parseInt(document.getElementById('input-digits').value, 10);
   const maxIter = parseInt(document.getElementById('input-maxiter').value, 10) || 20;
-  const s0raw   = document.getElementById('input-seed0').value.trim();
+  const s0raw = document.getElementById('input-seed0').value.trim();
 
   if (!s0raw) return showError('Ingresa la semilla X₀');
   const seed0 = parseInt(s0raw, 10);
@@ -326,27 +339,27 @@ function renderAll(d) {
   document.getElementById('step-detail-card').style.display = 'none';
 
   renderStats(d);
-  if      (currentMethod === 'square')   renderSquareTable(d);
-  else if (currentMethod === 'product')  renderProductTable(d);
-  else                                   renderConstantTable(d);
+  if (currentMethod === 'square') renderSquareTable(d);
+  else if (currentMethod === 'product') renderProductTable(d);
+  else renderConstantTable(d);
   renderNumberGrid(d);
 }
 
 // ---- ESTADÍSTICAS ----
 function renderStats(d) {
-  const row        = document.getElementById('stats-row');
-  const valid      = results.filter(s => !s.isCycle);
-  const cycleStep  = results.find(s => s.isCycle);
-  const nums       = valid.map(s => s.r);
-  const avg        = nums.length ? (nums.reduce((a, b) => a + b, 0) / nums.length) : 0;
-  const period     = cycleStep ? (cycleStep.i - cycleStep.cycleBackTo) : valid.length;
+  const row = document.getElementById('stats-row');
+  const valid = results.filter(s => !s.isCycle);
+  const cycleStep = results.find(s => s.isCycle);
+  const nums = valid.map(s => s.r);
+  const avg = nums.length ? (nums.reduce((a, b) => a + b, 0) / nums.length) : 0;
+  const period = cycleStep ? (cycleStep.i - cycleStep.cycleBackTo) : valid.length;
 
   row.style.display = 'grid';
   row.innerHTML = [
-    { label: 'Números generados',   value: valid.length,                          cls: 'indigo' },
-    { label: 'Longitud del período', value: cycleStep ? period : '∞',              cls: 'violet' },
-    { label: 'Ciclo detectado',      value: cycleStep ? `Paso ${cycleStep.i}` : 'No', cls: cycleStep ? 'red' : 'green' },
-    { label: 'Promedio r̄',          value: avg.toFixed(4),                        cls: '' },
+    { label: 'Números generados', value: valid.length, cls: 'indigo' },
+    { label: 'Longitud del período', value: cycleStep ? period : '∞', cls: 'violet' },
+    { label: 'Ciclo detectado', value: cycleStep ? `Paso ${cycleStep.i}` : 'No', cls: cycleStep ? 'red' : 'green' },
+    { label: 'Promedio r̄', value: avg.toFixed(4), cls: '' },
   ].map(s => `
     <div class="stat-card">
       <div class="stat-label">${s.label}</div>
@@ -356,21 +369,22 @@ function renderStats(d) {
 
 // ---- TABLA CUADRADOS MEDIOS ----
 function renderSquareTable(d) {
-  document.getElementById('empty-state').style.display  = 'none';
+  document.getElementById('empty-state').style.display = 'none';
   document.getElementById('table-wrapper').style.display = 'block';
 
   const badge = document.getElementById('result-badge');
   badge.style.display = 'inline-block';
-  badge.textContent   = `${results.filter(s => !s.isCycle).length} núm · ${d} dígitos`;
+  badge.textContent = `${results.filter(s => !s.isCycle).length} núm · ${d} dígitos`;
 
   document.getElementById('table-head').innerHTML = `
     <tr>
       <th>i</th>
       <th>Xᵢ</th>
       <th>Xᵢ²</th>
-      <th>Xᵢ² con 2d=${2*d} dígitos <span class="hl-col">← díg. medios →</span></th>
+      <th>Xᵢ² con 2d=${2 * d} dígitos <span class="hl-col">← díg. medios →</span></th>
       <th>Xᵢ₊₁</th>
-      <th>rᵢ = Xᵢ / 10^${d}</th>
+      <th>Cálculo de rᵢ</th>
+      <th>rᵢ</th>
       <th>Detalle</th>
     </tr>`;
 
@@ -385,7 +399,7 @@ function renderSquareTable(d) {
       tr.classList.add('cycle-row');
       tr.innerHTML = `
         <td class="td-step">${step.i}</td>
-        <td class="td-cycle">${step.x !== undefined ? step.x.toString().padStart(d,'0') : '—'}</td>
+        <td class="td-cycle">${step.x !== undefined ? step.x.toString().padStart(d, '0') : '—'}</td>
         <td colspan="4" class="td-cycle">
           ⚠ Ciclo detectado — X<sub>${step.i}</sub> ya apareció en el paso ${step.cycleBackTo}
         </td>
@@ -397,6 +411,7 @@ function renderSquareTable(d) {
         <td class="td-op">${step.squared}</td>
         <td class="td-padded">${highlightPadded(step.midInfo.padded, step.midInfo.start, step.midInfo.end)}</td>
         <td class="td-next">${step.xNextPad}</td>
+        <td class="td-calc">${step.xNextPad} / ${Math.pow(10, d)}</td>
         <td class="td-r">${step.rStr}</td>
         <td><button class="btn-detail" onclick="showDetail(${step.i})">Ver →</button></td>`;
     }
@@ -406,12 +421,12 @@ function renderSquareTable(d) {
 
 // ---- TABLA PRODUCTOS MEDIOS ----
 function renderProductTable(d) {
-  document.getElementById('empty-state').style.display  = 'none';
+  document.getElementById('empty-state').style.display = 'none';
   document.getElementById('table-wrapper').style.display = 'block';
 
   const badge = document.getElementById('result-badge');
   badge.style.display = 'inline-block';
-  badge.textContent   = `${results.filter(s => !s.isCycle).length} núm · ${d} dígitos`;
+  badge.textContent = `${results.filter(s => !s.isCycle).length} núm · ${d} dígitos`;
 
   document.getElementById('table-head').innerHTML = `
     <tr>
@@ -419,9 +434,10 @@ function renderProductTable(d) {
       <th>Xᵢ₋₁</th>
       <th>Xᵢ</th>
       <th>Xᵢ₋₁ × Xᵢ</th>
-      <th>Producto con 2d=${2*d} dígitos <span class="hl-col">← díg. medios →</span></th>
+      <th>Producto con 2d=${2 * d} dígitos <span class="hl-col">← díg. medios →</span></th>
       <th>Xᵢ₊₁</th>
-      <th>rᵢ = Xᵢ / 10^${d}</th>
+      <th>Cálculo de rᵢ</th>
+      <th>rᵢ</th>
       <th>Detalle</th>
     </tr>`;
 
@@ -436,8 +452,8 @@ function renderProductTable(d) {
       tr.classList.add('cycle-row');
       tr.innerHTML = `
         <td class="td-step">${step.i}</td>
-        <td class="td-op">${step.xPrev?.toString().padStart(d,'0') ?? '—'}</td>
-        <td class="td-cycle">${step.xCurr?.toString().padStart(d,'0') ?? '—'}</td>
+        <td class="td-op">${step.xPrev?.toString().padStart(d, '0') ?? '—'}</td>
+        <td class="td-cycle">${step.xCurr?.toString().padStart(d, '0') ?? '—'}</td>
         <td colspan="4" class="td-cycle">
           ⚠ Ciclo detectado — X<sub>${step.i}</sub> ya apareció en el paso ${step.cycleBackTo}
         </td>
@@ -450,6 +466,7 @@ function renderProductTable(d) {
         <td class="td-op">${step.product}</td>
         <td class="td-padded">${highlightPadded(step.midInfo.padded, step.midInfo.start, step.midInfo.end)}</td>
         <td class="td-next violet">${step.xNextPad}</td>
+        <td class="td-calc">${step.xNextPad} / ${Math.pow(10, d)}</td>
         <td class="td-r">${step.rStr}</td>
         <td><button class="btn-detail violet" onclick="showDetail(${step.i})">Ver →</button></td>`;
     }
@@ -459,13 +476,13 @@ function renderProductTable(d) {
 
 // ---- TABLA MULTIPLICADOR CONSTANTE ----
 function renderConstantTable(d) {
-  document.getElementById('empty-state').style.display   = 'none';
+  document.getElementById('empty-state').style.display = 'none';
   document.getElementById('table-wrapper').style.display = 'block';
 
   const valid = results.filter(s => !s.isCycle);
   const badge = document.getElementById('result-badge');
   badge.style.display = 'inline-block';
-  badge.textContent   = `${valid.length} núm · ${d} dígitos`;
+  badge.textContent = `${valid.length} núm · ${d} dígitos`;
 
   // Obtén k del primer paso válido para mostrarlo en el encabezado
   const kLabel = valid.length > 0 ? valid[0].kPad : '?';
@@ -476,9 +493,10 @@ function renderConstantTable(d) {
       <th>Xᵢ</th>
       <th>k ( = ${kLabel} )</th>
       <th>k × Xᵢ</th>
-      <th>Producto con 2d=${2*d} dígitos <span class="hl-col">← díg. medios →</span></th>
+      <th>Producto con 2d=${2 * d} dígitos <span class="hl-col">← díg. medios →</span></th>
       <th>Xᵢ₊₁</th>
-      <th>rᵢ = Xᵢ / 10^${d}</th>
+      <th>Cálculo de rᵢ</th>
+      <th>rᵢ</th>
       <th>Detalle</th>
     </tr>`;
 
@@ -493,7 +511,7 @@ function renderConstantTable(d) {
       tr.classList.add('cycle-row');
       tr.innerHTML = `
         <td class="td-step">${step.i}</td>
-        <td class="td-cycle">${step.x?.toString().padStart(d,'0') ?? '—'}</td>
+        <td class="td-cycle">${step.x?.toString().padStart(d, '0') ?? '—'}</td>
         <td colspan="5" class="td-cycle">
           ⚠ Ciclo detectado — X<sub>${step.i}</sub> ya apareció en el paso ${step.cycleBackTo}
         </td>
@@ -506,6 +524,7 @@ function renderConstantTable(d) {
         <td class="td-op">${step.product}</td>
         <td class="td-padded">${highlightPadded(step.midInfo.padded, step.midInfo.start, step.midInfo.end)}</td>
         <td class="td-next teal">${step.xNextPad}</td>
+        <td class="td-calc">${step.xNextPad} / ${Math.pow(10, d)}</td>
         <td class="td-r">${step.rStr}</td>
         <td><button class="btn-detail teal" onclick="showDetail(${step.i})">Ver →</button></td>`;
     }
@@ -532,73 +551,73 @@ function showDetail(stepIndex) {
   const step = results.find(s => s.i === stepIndex && !s.isCycle);
   if (!step) return;
 
-  const d   = parseInt(document.getElementById('input-digits').value, 10);
+  const d = parseInt(document.getElementById('input-digits').value, 10);
   const mod = Math.pow(10, d);
 
-  const card    = document.getElementById('step-detail-card');
+  const card = document.getElementById('step-detail-card');
   const content = document.getElementById('step-detail-content');
-  const label   = document.getElementById('detail-step-label');
+  const label = document.getElementById('detail-step-label');
 
   card.style.display = 'block';
-  label.textContent  = `Paso i = ${stepIndex}`;
+  label.textContent = `Paso i = ${stepIndex}`;
   card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
   let html = '';
 
   if (currentMethod === 'square') {
-    const hlPad    = highlightPadded(step.midInfo.padded, step.midInfo.start, step.midInfo.end);
+    const hlPad = highlightPadded(step.midInfo.padded, step.midInfo.start, step.midInfo.end);
     const posStart = step.midInfo.start + 1;
-    const posEnd   = step.midInfo.end + 1;
+    const posEnd = step.midInfo.end + 1;
     html = `
       ${detailRow(1, false,
-        `Elevar X<sub>${step.i}</sub> al cuadrado`,
-        `X<sub>${step.i}</sub>² = <span class="hl-indigo">${step.xPad}</span>² = <span class="hl-yellow">${step.squared}</span>`)}
+      `Elevar X<sub>${step.i}</sub> al cuadrado`,
+      `X<sub>${step.i}</sub>² = <span class="hl-indigo">${step.xPad}</span>² = <span class="hl-yellow">${step.squared}</span>`)}
       ${detailRow(2, false,
-        `Expresar con 2d = ${2*d} dígitos (rellenar con ceros a la izquierda si el resultado tiene menos de ${2*d} dígitos)`,
+        `Expresar con 2d = ${2 * d} dígitos (rellenar con ceros a la izquierda si el resultado tiene menos de ${2 * d} dígitos)`,
         `${hlPad}`)}
       ${detailRow(3, false,
-        `Extraer d = ${d} dígitos centrales (posiciones ${posStart}–${posEnd})`,
-        `X<sub>${step.i+1}</sub> = <span class="hl-indigo">${step.xNextPad}</span>`)}
+          `Extraer d = ${d} dígitos centrales (posiciones ${posStart}–${posEnd})`,
+          `X<sub>${step.i + 1}</sub> = <span class="hl-indigo">${step.xNextPad}</span>`)}
       ${detailRow(4, true,
-        `Normalizar → número pseudoaleatorio`,
-        `r<sub>${step.i}</sub> = ${step.xPad} / ${mod.toLocaleString('es-MX')} = <span class="hl-result">${step.rStr}</span>`)}`;
+            `Normalizar → número pseudoaleatorio`,
+            `r<sub>${step.i}</sub> = ${step.xNextPad} / ${mod.toLocaleString('es-MX')} = <span class="hl-result">${step.rStr}</span>`)}`;
 
   } else if (currentMethod === 'product') {
-    const hlPad    = highlightPadded(step.midInfo.padded, step.midInfo.start, step.midInfo.end);
+    const hlPad = highlightPadded(step.midInfo.padded, step.midInfo.start, step.midInfo.end);
     const posStart = step.midInfo.start + 1;
-    const posEnd   = step.midInfo.end + 1;
+    const posEnd = step.midInfo.end + 1;
     html = `
       ${detailRow(1, false,
-        `Multiplicar X<sub>${step.i}</sub>₋₁ × X<sub>${step.i}</sub>`,
-        `${step.xPrevPad} × ${step.xCurrPad} = <span class="hl-yellow">${step.product}</span>`)}
+      `Multiplicar X<sub>${step.i}</sub>₋₁ × X<sub>${step.i}</sub>`,
+      `${step.xPrevPad} × ${step.xCurrPad} = <span class="hl-yellow">${step.product}</span>`)}
       ${detailRow(2, false,
-        `Expresar con 2d = ${2*d} dígitos`,
+        `Expresar con 2d = ${2 * d} dígitos`,
         `${hlPad}`)}
       ${detailRow(3, false,
-        `Extraer d = ${d} dígitos centrales (posiciones ${posStart}–${posEnd})`,
-        `X<sub>${step.i+1}</sub> = <span class="hl-violet">${step.xNextPad}</span>`)}
+          `Extraer d = ${d} dígitos centrales (posiciones ${posStart}–${posEnd})`,
+          `X<sub>${step.i + 1}</sub> = <span class="hl-violet">${step.xNextPad}</span>`)}
       ${detailRow(4, true,
-        `Normalizar → número pseudoaleatorio`,
-        `r<sub>${step.i}</sub> = ${step.xCurrPad} / ${mod.toLocaleString('es-MX')} = <span class="hl-result">${step.rStr}</span>`)}`;
+            `Normalizar → número pseudoaleatorio`,
+            `r<sub>${step.i}</sub> = ${step.xNextPad} / ${mod.toLocaleString('es-MX')} = <span class="hl-result">${step.rStr}</span>`)}`;
 
   } else {
     // Multiplicador Constante
-    const hlPad    = highlightPadded(step.midInfo.padded, step.midInfo.start, step.midInfo.end);
+    const hlPad = highlightPadded(step.midInfo.padded, step.midInfo.start, step.midInfo.end);
     const posStart = step.midInfo.start + 1;
-    const posEnd   = step.midInfo.end + 1;
+    const posEnd = step.midInfo.end + 1;
     html = `
       ${detailRow(1, false,
-        `Multiplicar constante k × X<sub>${step.i}</sub>`,
-        `k × X<sub>${step.i}</sub> = <span class="hl-teal">${step.kPad}</span> × <span class="hl-indigo">${step.xPad}</span> = <span class="hl-yellow">${step.product}</span>`)}
+      `Multiplicar constante k × X<sub>${step.i}</sub>`,
+      `k × X<sub>${step.i}</sub> = <span class="hl-teal">${step.kPad}</span> × <span class="hl-indigo">${step.xPad}</span> = <span class="hl-yellow">${step.product}</span>`)}
       ${detailRow(2, false,
-        `Expresar con 2d = ${2*d} dígitos (rellenar con ceros si el resultado tiene menos de ${2*d} dígitos)`,
+        `Expresar con 2d = ${2 * d} dígitos (rellenar con ceros si el resultado tiene menos de ${2 * d} dígitos)`,
         `${hlPad}`)}
       ${detailRow(3, false,
-        `Extraer d = ${d} dígitos centrales (posiciones ${posStart}–${posEnd})`,
-        `X<sub>${step.i+1}</sub> = <span class="hl-teal">${step.xNextPad}</span>`)}
+          `Extraer d = ${d} dígitos centrales (posiciones ${posStart}–${posEnd})`,
+          `X<sub>${step.i + 1}</sub> = <span class="hl-teal">${step.xNextPad}</span>`)}
       ${detailRow(4, true,
-        `Normalizar → número pseudoaleatorio`,
-        `r<sub>${step.i}</sub> = ${step.xPad} / ${mod.toLocaleString('es-MX')} = <span class="hl-result">${step.rStr}</span>`)}`;
+            `Normalizar → número pseudoaleatorio`,
+            `r<sub>${step.i}</sub> = ${step.xNextPad} / ${mod.toLocaleString('es-MX')} = <span class="hl-result">${step.rStr}</span>`)}`;
   }
 
   content.innerHTML = html;
@@ -621,14 +640,14 @@ function detailRow(num, isResult, desc, formula) {
 // ============================================================
 function clearResults() {
   results = [];
-  document.getElementById('empty-state').style.display  = 'block';
+  document.getElementById('empty-state').style.display = 'block';
   document.getElementById('table-wrapper').style.display = 'none';
   document.getElementById('table-head').innerHTML = '';
   document.getElementById('table-body').innerHTML = '';
-  document.getElementById('stats-row').style.display     = 'none';
-  document.getElementById('numbers-card').style.display  = 'none';
+  document.getElementById('stats-row').style.display = 'none';
+  document.getElementById('numbers-card').style.display = 'none';
   document.getElementById('step-detail-card').style.display = 'none';
-  document.getElementById('result-badge').style.display  = 'none';
+  document.getElementById('result-badge').style.display = 'none';
 }
 
 function showError(msg) {
