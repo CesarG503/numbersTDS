@@ -1,0 +1,28 @@
+[
+  {
+    "id": "ej-05a",
+    "title": "Ejercicio 5 (Continuación 4.a)",
+    "method": "linear",
+    "n": 200,
+    "parameters": {
+      "seed0": 1457,
+      "paramA": 1117,
+      "paramC": 3057,
+      "paramM": 1679567
+    },
+    "description": "Pruebas de media, varianza y póker para los datos del 101 al 200 del generador 4.a."
+  },
+  {
+    "id": "ej-05b",
+    "title": "Ejercicio 5 (Continuación 4.b)",
+    "method": "linear",
+    "n": 200,
+    "parameters": {
+      "seed0": 1117,
+      "paramA": 2177,
+      "paramC": 2367,
+      "paramM": 1351867
+    },
+    "description": "Pruebas de media, varianza y póker para los datos del 101 al 200 del generador 4.b."
+  }
+]
