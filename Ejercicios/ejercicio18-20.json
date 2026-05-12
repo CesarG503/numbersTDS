@@ -1,0 +1,108 @@
+[
+  {
+    "id": "ej-17",
+    "title": "Ejercicio 17: Corridas arriba y abajo de la media (50 números)",
+    "description": "Determinar independencia de 50 números mediante la prueba de corridas arriba y abajo de la media con un nivel de aceptación de 90%.",
+    "numbers": [
+      0.6351, 0.0272, 0.0227, 0.3827, 0.0659, 0.3683, 0.2270, 0.7323, 0.4088, 0.2139,
+      0.4271, 0.4855, 0.2028, 0.1618, 0.5336, 0.7378, 0.3670, 0.6637, 0.1864, 0.6734,
+      0.9498, 0.9323, 0.0265, 0.4696, 0.7730, 0.9670, 0.7500, 0.5259, 0.5269, 0.5406,
+      0.3641, 0.0356, 0.2181, 0.0866, 0.6085, 0.4468, 0.0539, 0.9311, 0.3128, 0.1562,
+      0.8559, 0.7280, 0.7789, 0.1746, 0.6637, 0.0687, 0.5494, 0.1504, 0.8397, 0.2995
+    ],
+    "alpha": 0.10,
+    "m": 10,
+    "prueba": "corridas_arriba_abajo_media",
+    "resultados": {
+      "n": 50,
+      "media": 0.44614,
+      "n1_arriba": 25,
+      "n2_abajo": 25,
+      "corridas_r": 26,
+      "mu_r": 26.0,
+      "sigma_r": 3.49927,
+      "Z_calculado": 0.0,
+      "Z_critico": 1.645,
+      "condicion": "|Z| = 0.0 <= 1.645",
+      "decision": "Se acepta H0: los números son independientes"
+    }
+  },
+  {
+    "id": "ej-18",
+    "title": "Ejercicio 18: Prueba de series (50 números)",
+    "description": "Utilizar la prueba de series para determinar si los 50 números son independientes con un nivel de aceptación de 90%.",
+    "numbers": [
+      0.5858, 0.8863, 0.8378, 0.3203, 0.4115, 0.2710, 0.9238, 0.1959, 0.9268, 0.6702,
+      0.6213, 0.4360, 0.6279, 0.8415, 0.5786, 0.0543, 0.3567, 0.1655, 0.3880, 0.8080,
+      0.1931, 0.0843, 0.9152, 0.6093, 0.7587, 0.4515, 0.3203, 0.5139, 0.7070, 0.9123,
+      0.1242, 0.8826, 0.9921, 0.8523, 0.6723, 0.8540, 0.4722, 0.4781, 0.2101, 0.1680,
+      0.8658, 0.4028, 0.6136, 0.8720, 0.1126, 0.5857, 0.9172, 0.8943, 0.8095, 0.6408
+    ],
+    "alpha": 0.10,
+    "m": 5,
+    "prueba": "series_chi_cuadrada",
+    "resultados": {
+      "n": 50,
+      "celdas_m": 5,
+      "frecuencia_esperada_E": 10.0,
+      "frecuencias_observadas": {
+        "[0.0, 0.2)": 8,
+        "[0.2, 0.4)": 6,
+        "[0.4, 0.6)": 10,
+        "[0.6, 0.8)": 9,
+        "[0.8, 1.0)": 17
+      },
+      "chi2_calculado": 7.0,
+      "chi2_critico": 7.779,
+      "grados_libertad": 4,
+      "condicion": "chi2 = 7.0 <= 7.779",
+      "decision": "Se acepta H0: los números tienen distribución uniforme y son independientes"
+    }
+  },
+  {
+    "id": "ej-19",
+    "title": "Ejercicio 19: Gráfica de relación XY con ALEATORIO()",
+    "description": "Generar 200 números aleatorios en una hoja de cálculo con ALEATORIO(), copiarlos desfasados una posición y graficar XY. Observar si los datos están dispersos de manera uniforme.",
+    "numbers": [],
+    "alpha": null,
+    "m": null,
+    "prueba": "grafica_xy_autocorrelacion_lag1",
+    "instrucciones": [
+      "1. En la columna A, generar 200 números con =ALEATORIO() (celdas A1:A200).",
+      "2. Copiar los valores de A1:A200 como 'Pegado especial > Solo valores' en la columna B (B1:B200) para fijarlos.",
+      "3. En la columna C ingresar los mismos valores desfasados una posición: C1=B2, C2=B3, ..., C199=B200, C200=B1.",
+      "4. Seleccionar C1:C200 como eje X y B1:B200 como eje Y y generar un gráfico de dispersión XY.",
+      "5. Observar si los puntos se distribuyen de manera uniforme en el cuadrado unitario [0,1]×[0,1]."
+    ],
+    "interpretacion": "Si los números son verdaderamente aleatorios e independientes, los puntos del gráfico XY deben distribuirse de manera uniforme y sin patrones reconocibles dentro del cuadrado unitario. La ausencia de agrupaciones, líneas o tendencias es evidencia visual de independencia entre números consecutivos (autocorrelación de retraso 1 cercana a cero).",
+    "conclusion": "Se espera que sí, los datos estén dispersos de manera uniforme, dado que ALEATORIO() genera números pseudoaleatorios con buenas propiedades estadísticas."
+  },
+  {
+    "id": "ej-20",
+    "title": "Ejercicio 20: Media y varianza de los datos del problema 18",
+    "description": "Obtener la media y la varianza de los datos del problema 18 y compararlos con los valores teóricos de una distribución uniforme U(0,1).",
+    "numbers": [
+      0.5858, 0.8863, 0.8378, 0.3203, 0.4115, 0.2710, 0.9238, 0.1959, 0.9268, 0.6702,
+      0.6213, 0.4360, 0.6279, 0.8415, 0.5786, 0.0543, 0.3567, 0.1655, 0.3880, 0.8080,
+      0.1931, 0.0843, 0.9152, 0.6093, 0.7587, 0.4515, 0.3203, 0.5139, 0.7070, 0.9123,
+      0.1242, 0.8826, 0.9921, 0.8523, 0.6723, 0.8540, 0.4722, 0.4781, 0.2101, 0.1680,
+      0.8658, 0.4028, 0.6136, 0.8720, 0.1126, 0.5857, 0.9172, 0.8943, 0.8095, 0.6408
+    ],
+    "alpha": null,
+    "m": null,
+    "prueba": "comparacion_estadisticos_muestrales_vs_teoricos",
+    "resultados": {
+      "n": 50,
+      "media_calculada": 0.57586,
+      "media_teorica_U01": 0.5,
+      "diferencia_media": 0.07586,
+      "varianza_calculada": 0.07801,
+      "varianza_teorica_U01": 0.08333,
+      "diferencia_varianza": -0.00532
+    },
+    "respuestas": {
+      "son_exactamente_iguales": false,
+      "explicacion": "Los valores calculados (x̄ = 0.57586, s² = 0.07801) no coinciden exactamente con los teóricos de U(0,1) (μ = 0.5, σ² = 1/12 ≈ 0.08333). La diferencia se debe al error muestral aleatorio: con solo n = 50 observaciones, los estimadores son aproximaciones de los parámetros poblacionales. Por la Ley de los Grandes Números, a medida que n → ∞ los estimadores convergerían a los valores teóricos. La discrepancia observada es esperada y no implica que los números no provengan de una distribución uniforme."
+    }
+  }
+]

@@ -367,6 +367,34 @@
         <canvas id="scatter-chart" class="hidden" style="max-height:320px;"></canvas>
       </div>
 
+      <!-- Shifted XY Chart -->
+      <div class="glass rounded-2xl p-5">
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <i class="fas fa-chart-scatter text-gray-500"></i> Relacion XY con desfase (r_i, r_{i+1})
+        </div>
+        <div class="mb-3 text-xs text-gray-500">
+          Pega una lista de numeros, se hara un desfase de 1 posicion y se graficaran pares (r_i, r_{i+1}).
+        </div>
+        <textarea id="shift-numbers" class="inp" rows="4" placeholder="0.1234, 0.5678, 0.9012..." oninput="updateShiftCount()"></textarea>
+        <div class="flex items-center justify-between text-[11px] text-gray-500 mt-2">
+          <span id="shift-count">0 numeros detectados</span>
+          <span id="shift-hint">Sugerido: 200 numeros</span>
+        </div>
+        <div class="flex flex-wrap gap-2 mt-3">
+          <button class="btn-gen text-sm py-2 px-3" onclick="generateShiftRandom()">
+            <i class="fas fa-dice"></i> Generar 200 aleatorios
+          </button>
+          <button class="btn-gen text-sm py-2 px-3" onclick="renderShiftChart()">
+            <i class="fas fa-chart-scatter"></i> Graficar XY
+          </button>
+        </div>
+        <div id="shift-empty" class="py-10 text-center text-gray-600 text-sm">
+          <i class="fas fa-braille text-3xl mb-3 block text-gray-700"></i>
+          La grafica aparecera aqui despues de cargar numeros
+        </div>
+        <canvas id="shift-chart" class="hidden" style="max-height:320px;"></canvas>
+      </div>
+
       <!-- Validation Section -->
       <div class="glass rounded-2xl p-5">
         <div class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -389,6 +417,21 @@
             <option value="external">Lista externa</option>
           </select>
         </div>
+        <div class="mb-4 rounded-xl border border-white/10 bg-white/5 p-3">
+          <div class="text-[11px] uppercase tracking-widest text-gray-400 font-semibold mb-2">Atajo de Ejercicio</div>
+          <div class="text-xs text-gray-400 mb-3">Ejercicios 17-18: Usa 50 numeros con 90% de aceptacion.</div>
+          <div class="flex flex-wrap gap-2">
+            <button class="btn-gen text-sm py-2 px-3" onclick="setupRunsMeanExercise()">
+              <i class="fas fa-bolt"></i> Corridas de la media (90%)
+            </button>
+            <button class="btn-gen text-sm py-2 px-3" onclick="setupSeriesExercise()">
+              <i class="fas fa-border-all"></i> Prueba de series (90%)
+            </button>
+            <button class="btn-gen text-sm py-2 px-3" onclick="clearValidationFilter()">
+              <i class="fas fa-filter-circle-xmark"></i> Ver todas las pruebas
+            </button>
+          </div>
+        </div>
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div class="flex items-center gap-2">
             <input id="validation-json-input" type="file" accept="application/json,.json" style="display:none" onchange="loadExternalJson(event)">
@@ -403,7 +446,23 @@
         </div>
         <div id="external-list-container" class="hidden mb-4">
           <label class="lbl" for="external-numbers">Lista de números r_i (separados por comas, espacios o líneas)</label>
-          <textarea id="external-numbers" class="inp" rows="5" placeholder="0.1234, 0.5678, 0.9012..."></textarea>
+          <textarea id="external-numbers" class="inp" rows="5" placeholder="0.1234, 0.5678, 0.9012..." oninput="updateExternalCount()"></textarea>
+          <div class="flex items-center justify-between text-[11px] text-gray-500 mt-2">
+            <span id="external-count">0 numeros detectados</span>
+            <span id="external-count-hint">Se esperan 50 numeros</span>
+          </div>
+          <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+            <div class="rounded-lg border border-white/10 bg-black/30 px-3 py-2">
+              <div class="text-gray-500 uppercase font-semibold tracking-widest mb-1">Media</div>
+              <div id="external-mean" class="text-gray-200 font-mono">-</div>
+              <div id="external-mean-check" class="text-gray-500">Esperado: 0.5</div>
+            </div>
+            <div class="rounded-lg border border-white/10 bg-black/30 px-3 py-2">
+              <div class="text-gray-500 uppercase font-semibold tracking-widest mb-1">Varianza</div>
+              <div id="external-variance" class="text-gray-200 font-mono">-</div>
+              <div id="external-variance-check" class="text-gray-500">Esperado: 1/12</div>
+            </div>
+          </div>
           <div class="flex gap-2 mt-2">
             <button class="btn-gen text-sm py-2 px-3" onclick="renderValidation()">Validar lista</button>
           </div>
@@ -540,6 +599,7 @@
     // =============================================================
     let currentMethod = 'square';
     let scatterChart = null;
+    let shiftChart = null;
     let results = [];
     let exercises = [];
     let selectedExerciseId = null;
@@ -746,6 +806,7 @@
       if (!exercise.numbers || exercise.numbers.length === 0) {
         showValidationMessage('Este ejercicio requiere que recolectes y proporciones los números primero.');
         document.getElementById('external-numbers').value = '';
+        updateExternalCount();
         return;
       }
       document.getElementById('validation-source').value = 'external';
@@ -754,6 +815,7 @@
       document.getElementById('validation-alpha').value = exercise.alpha * 100;
       document.getElementById('validation-m').value = exercise.m;
       window._currentExerciseTests = exercise.tests || [];
+      updateExternalCount();
       renderValidation();
     }
 
@@ -1086,6 +1148,75 @@
           scales: {
             x: { min: 0, max: 1, grid: { color: grid, lineWidth: 1 }, ticks: { color: tick, font: { size: 10 }, stepSize: 0.1 }, title: { display: true, text: 'r[i]', color: '#6b7280', font: { size: 11 } } },
             y: { min: 0, max: 1, grid: { color: grid, lineWidth: 1 }, ticks: { color: tick, font: { size: 10 }, stepSize: 0.1 }, title: { display: true, text: 'r[i+1]', color: '#6b7280', font: { size: 11 } } }
+          }
+        }
+      });
+    }
+
+    function updateShiftCount() {
+      const text = document.getElementById('shift-numbers').value.trim();
+      const count = text ? parseNumberListRaw(text).length : 0;
+      document.getElementById('shift-count').textContent = `${count} numeros detectados`;
+    }
+
+    function generateShiftRandom() {
+      const n = 200;
+      const values = Array.from({ length: n }, () => Math.random().toFixed(6));
+      document.getElementById('shift-numbers').value = values.join(', ');
+      updateShiftCount();
+      renderShiftChart();
+    }
+
+    function buildShiftPairs(values) {
+      if (values.length < 2) return [];
+      const shifted = values.slice(1);
+      shifted.push(values[0]);
+      return values.map((v, i) => ({ x: v, y: shifted[i] }));
+    }
+
+    function renderShiftChart() {
+      const text = document.getElementById('shift-numbers').value.trim();
+      if (!text) {
+        document.getElementById('shift-empty').style.display = 'block';
+        document.getElementById('shift-chart').classList.add('hidden');
+        return;
+      }
+      const values = parseNumberListRaw(text);
+      if (values.length < 2) {
+        document.getElementById('shift-empty').style.display = 'block';
+        document.getElementById('shift-chart').classList.add('hidden');
+        return;
+      }
+
+      const points = buildShiftPairs(values);
+      const canvas = document.getElementById('shift-chart');
+      document.getElementById('shift-empty').style.display = 'none';
+      canvas.classList.remove('hidden');
+
+      if (shiftChart) shiftChart.destroy();
+
+      shiftChart = new Chart(canvas, {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'XY con desfase',
+            data: points,
+            backgroundColor: 'rgba(99,102,241,.75)',
+            borderColor: 'rgba(99,102,241,1)',
+            pointRadius: 3,
+            pointHoverRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { labels: { color: '#94a3b8' } },
+            tooltip: { callbacks: { label: c => `(${c.parsed.x.toFixed(4)}, ${c.parsed.y.toFixed(4)})` } }
+          },
+          scales: {
+            x: { min: 0, max: 1, ticks: { color: '#4b5563' }, grid: { color: 'rgba(255,255,255,.05)' } },
+            y: { min: 0, max: 1, ticks: { color: '#4b5563' }, grid: { color: 'rgba(255,255,255,.05)' } }
           }
         }
       });
@@ -1663,7 +1794,16 @@
       const catUniformity = filterMode ? testsToRun.filter(t => ['mean', 'variance', 'uniformity'].includes(t)) : ['mean', 'variance', 'uniformity'];
       const catIndependence = filterMode ? testsToRun.filter(t => ['runs_updown', 'runs_mean', 'poker', 'series', 'gaps'].includes(t)) : ['runs_updown', 'runs_mean', 'poker', 'series', 'gaps'];
       
+      const expectedCount = window._expectedCount;
+      const countWarning = expectedCount && rValues.length !== expectedCount
+        ? `<div class="mb-4 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-300">
+            <i class="fas fa-triangle-exclamation mr-1"></i>
+            Se esperaban ${expectedCount} números y se detectaron ${rValues.length}. Ajusta la lista antes de concluir el ejercicio.
+          </div>`
+        : '';
+
       let html = `<div class="space-y-6">
+        ${countWarning}
         <div class="text-sm text-gray-400 flex flex-wrap items-center gap-4 border-b border-white/10 pb-3">
           <span><i class="fas fa-percent text-indigo-400 mr-1"></i> $\\alpha = ${alpha}$</span>
           <span><i class="fas fa-layer-group text-teal-400 mr-1"></i> $m = ${m}$</span>
@@ -1773,6 +1913,7 @@
       const container = document.getElementById('external-list-container');
       if (source === 'external') {
         container.classList.remove('hidden');
+        updateExternalCount();
       } else {
         container.classList.add('hidden');
       }
@@ -1781,8 +1922,99 @@
 
     // Parsear lista de números
     function parseNumberList(text) {
-      const numbers = text.split(/[\s,;\n]+/).map(s => parseFloat(s.trim())).filter(n => !isNaN(n) && n >= 0 && n <= 1);
+      const numbers = parseNumberListRaw(text);
       return numbers.length >= 10 ? numbers : null;
+    }
+
+    function parseNumberListRaw(text) {
+      return text
+        .split(/[\s,;\n]+/)
+        .map(s => parseFloat(s.trim()))
+        .filter(n => !isNaN(n) && n >= 0 && n <= 1);
+    }
+
+    function updateExternalStats() {
+      const text = document.getElementById('external-numbers').value.trim();
+      const values = text ? parseNumberListRaw(text) : [];
+      const meanEl = document.getElementById('external-mean');
+      const varEl = document.getElementById('external-variance');
+      const meanCheck = document.getElementById('external-mean-check');
+      const varCheck = document.getElementById('external-variance-check');
+
+      if (values.length === 0) {
+        meanEl.textContent = '-';
+        varEl.textContent = '-';
+        meanCheck.textContent = 'Esperado: 0.5';
+        varCheck.textContent = 'Esperado: 1/12';
+        meanCheck.className = 'text-gray-500';
+        varCheck.className = 'text-gray-500';
+        return;
+      }
+
+      const mean = values.reduce((a, b) => a + b, 0) / values.length;
+      const variance = values.length > 1
+        ? values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / (values.length - 1)
+        : 0;
+      const expectedMean = 0.5;
+      const expectedVar = 1 / 12;
+      const eps = 1e-4;
+
+      meanEl.textContent = mean.toFixed(6);
+      varEl.textContent = variance.toFixed(6);
+
+      const meanExact = Math.abs(mean - expectedMean) <= eps;
+      const varExact = Math.abs(variance - expectedVar) <= eps;
+      meanCheck.textContent = meanExact ? 'Exacto: 0.5' : 'No es exacto: 0.5';
+      varCheck.textContent = varExact ? 'Exacto: 1/12' : 'No es exacto: 1/12';
+      meanCheck.className = meanExact ? 'text-green-400' : 'text-amber-300';
+      varCheck.className = varExact ? 'text-green-400' : 'text-amber-300';
+    }
+
+    function updateExternalCount() {
+      const text = document.getElementById('external-numbers').value.trim();
+      const count = text ? parseNumberListRaw(text).length : 0;
+      const label = document.getElementById('external-count');
+      const hint = document.getElementById('external-count-hint');
+      label.textContent = `${count} numeros detectados`;
+
+      const expected = window._expectedCount;
+      if (expected) {
+        const ok = count === expected;
+        hint.textContent = ok ? `Listo: ${expected} numeros` : `Se esperan ${expected} numeros`;
+        hint.className = ok ? 'text-green-400' : 'text-amber-300';
+      } else {
+        hint.textContent = 'Sin conteo objetivo activo';
+        hint.className = 'text-gray-500';
+      }
+      updateExternalStats();
+    }
+
+    function setupRunsMeanExercise() {
+      window._currentExerciseTests = ['runs_mean'];
+      window._expectedCount = 50;
+      document.getElementById('validation-source').value = 'external';
+      document.getElementById('validation-alpha').value = 10;
+      toggleValidationSource();
+      updateExternalCount();
+      showValidationMessage('Pega los 50 números y presiona Validar lista.');
+    }
+
+    function setupSeriesExercise() {
+      window._currentExerciseTests = ['series'];
+      window._expectedCount = 50;
+      document.getElementById('validation-source').value = 'external';
+      document.getElementById('validation-alpha').value = 10;
+      document.getElementById('validation-m').value = 10;
+      toggleValidationSource();
+      updateExternalCount();
+      showValidationMessage('Pega los 50 números y presiona Validar lista.');
+    }
+
+    function clearValidationFilter() {
+      window._currentExerciseTests = [];
+      window._expectedCount = null;
+      updateExternalCount();
+      renderValidation();
     }
 
     // Handle validation JSON dataset files
@@ -1865,6 +2097,7 @@
       document.getElementById('external-numbers').value = dataset.numbers.join(', ');
       document.getElementById('validation-alpha').value = dataset.alpha * 100;
       document.getElementById('validation-m').value = dataset.m;
+      updateExternalCount();
     }
 
     function showValidationMessage(message) {
